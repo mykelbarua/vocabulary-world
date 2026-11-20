@@ -1,0 +1,992 @@
+/* =====================================================================
+   VOCABULARY WORLD — COMPLETE DATA MODULE
+   LEVEL_META, ASSESSMENT_OPTIONS, CURRICULUM_DATA
+====================================================================== */
+
+    /* =====================================================================
+       3. LEVEL METADATA (4 LEVELS WITH CUSTOM BESPOKE INLINE SVG ILLUSTRATIONS)
+    ====================================================================== */
+    const LEVEL_META = [
+      {
+        id: 'beginner',
+        badge: 'LEVEL 01 • BEGINNER',
+        title: 'Beginner',
+        bengaliSubtitle: 'প্রাথমিক স্তর',
+        description: 'দৈনন্দিন জীবনের মৌলিক ইংরেজি শব্দ, সহজ বাংলা অর্থ, বাক্য গঠন এবং সঠিক উচ্চারণ শেখার শুরু।',
+        svg: `
+          <svg class="w-16 h-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="56" height="56" rx="18" fill="#EEF4F1"/>
+            <!-- Open Book -->
+            <path d="M16 44C21 41.5 26.5 41.5 32 45C37.5 41.5 43 41.5 48 44V26C43 23.5 37.5 23.5 32 27C26.5 23.5 21 23.5 16 26V44Z" fill="#FFFFFF" stroke="#2D5A4C" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M32 27V45" stroke="#2D5A4C" stroke-width="2.3" stroke-linecap="round"/>
+            <!-- Sprouting Leaf -->
+            <path d="M32 24V15" stroke="#2D5A4C" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M32 19C26.5 19 24 15 24 11.5C28.5 11.5 32 14.5 32 19Z" fill="#2D5A4C"/>
+            <path d="M32 17C37.5 17 40 13 40 9.5C35.5 9.5 32 12.5 32 17Z" fill="#C26D53"/>
+          </svg>
+        `
+      },
+      {
+        id: 'intermediate',
+        badge: 'LEVEL 02 • INTERMEDIATE',
+        title: 'Intermediate',
+        bengaliSubtitle: 'মাধ্যমিক স্তর',
+        description: 'কথোপকথন ও লেখার দক্ষতা বাড়াতে প্রয়োজনীয় শব্দভান্ডার, Phrasal Verbs, Idioms এবং Collocations।',
+        svg: `
+          <svg class="w-16 h-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="56" height="56" rx="18" fill="#FAF0EC"/>
+            <!-- Rising Path -->
+            <path d="M15 47C22 47 24 38 32 38C40 38 42 29 49 29" stroke="#2D5A4C" stroke-width="2.8" stroke-linecap="round" stroke-dasharray="3 3"/>
+            <!-- Compass -->
+            <circle cx="32" cy="24" r="11" fill="#FFFFFF" stroke="#2D5A4C" stroke-width="2.5"/>
+            <polygon points="36.5,19.5 34,26 27.5,28.5 30,22" fill="#C26D53"/>
+            <circle cx="32" cy="24" r="2" fill="#2D5A4C"/>
+          </svg>
+        `
+      },
+      {
+        id: 'advanced',
+        badge: 'LEVEL 03 • ADVANCED',
+        title: 'Advanced',
+        bengaliSubtitle: 'উচ্চতর স্তর',
+        description: 'C1–C2 পর্যায়ের সমৃদ্ধ শব্দভান্ডার, Academic Vocabulary, Formal English এবং গভীর পাঠ্য বিশ্লেষণ।',
+        svg: `
+          <svg class="w-16 h-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="56" height="56" rx="18" fill="#EEF4F1"/>
+            <!-- Mountain Peaks -->
+            <polygon points="14,47 28,23 42,47" fill="#FFFFFF" stroke="#2D5A4C" stroke-width="2.5" stroke-linejoin="round"/>
+            <polygon points="30,47 41,29 52,47" fill="#FAF0EC" stroke="#2D5A4C" stroke-width="2.3" stroke-linejoin="round"/>
+            <!-- Guiding Star -->
+            <polygon points="41,12 42.6,16.2 47,16.5 43.6,19.3 44.7,23.6 41,21.2 37.3,23.6 38.4,19.3 35,16.5 39.4,16.2" fill="#C26D53"/>
+          </svg>
+        `
+      },
+      {
+        id: 'pro',
+        badge: 'LEVEL 04 • PRO',
+        title: 'Pro',
+        bengaliSubtitle: 'পেশাদার ও দক্ষ স্তর',
+        description: 'কর্মক্ষেত্র, Business English, পেশাদার যোগাযোগ এবং জটিল বাক্য কাঠামোয় পূর্ণ দক্ষতা অর্জন।',
+        svg: `
+          <svg class="w-16 h-16" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="4" y="4" width="56" height="56" rx="18" fill="#FAF0EC"/>
+            <!-- Laurel Wreath -->
+            <path d="M21 44C15.5 39 14.5 30.5 18 24" stroke="#2D5A4C" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M43 44C48.5 39 49.5 30.5 46 24" stroke="#2D5A4C" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M24 47H40" stroke="#2D5A4C" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Crown Emblem -->
+            <path d="M20 36L22 23L28 29L32 20L36 29L42 23L44 36H20Z" fill="#FFFFFF" stroke="#C26D53" stroke-width="2.5" stroke-linejoin="round"/>
+            <rect x="20" y="36" width="24" height="4.5" rx="2" fill="#2D5A4C"/>
+          </svg>
+        `
+      }
+    ];
+
+    const ASSESSMENT_OPTIONS = [
+      { id: 1, text: 'একদমই ইংরেজি শব্দ জানি না।' },
+      { id: 2, text: 'মোটামুটি ইংরেজি শব্দ জানি।' },
+      { id: 3, text: 'কথোপকথনের করার মতো ইংরেজি সম্পর্কে জ্ঞান আছে।' },
+      { id: 4, text: 'ভালোই ইংরেজি পারি।' }
+    ];
+
+    /* =====================================================================
+       4. COMPLETE 4-LEVEL CURRICULUM & VOCABULARY DATABASE
+          (6 Core Words + 2 Extra Practice Words + Full Modules per Level)
+    ====================================================================== */
+    const CURRICULUM_DATA = {
+      /* -------------------------------------------------------------------
+         LEVEL 1: BEGINNER
+      -------------------------------------------------------------------- */
+      beginner: {
+        id: 'beginner',
+        title: 'Beginner',
+        bengaliSubtitle: 'মৌলিক ইংরেজি শব্দভান্ডার, দৈনন্দিন শব্দ, সহজ কথোপকথন এবং ছোটদের শিক্ষণীয় গল্প',
+        words: [
+          {
+            id: 'beg-1',
+            word: 'Serene',
+            imageQuery: 'calm mountain lake sunrise',
+            pos: 'Adjective',
+            ipa: '/səˈriːn/',
+            meaningBn: 'শান্ত, নির্মল, প্রশান্ত',
+            explanationEn: 'Calm, peaceful, and untroubled by noise or worry.',
+            example: 'The mountain lake looked remarkably serene at dawn before the wind picked up.',
+            exampleBn: 'বাতাস বইতে শুরু করার আগে ভোরবেলা পাহাড়ি হ্রদটি অসাধারণভাবে শান্ত ও নির্মল দেখাচ্ছিল।',
+            synonyms: [
+              { word: 'Peaceful', meaningBn: 'শান্তিপূর্ণ', explanationBn: 'যেখানে কোনো কোলাহল, ঝগড়া বা অশান্তি নেই এমন পরিবেশ বোঝাতে ব্যবহৃত হয়।' },
+              { word: 'Calm', meaningBn: 'শান্ত, স্থির', explanationBn: 'উত্তেজনা বা অস্থিরতাহীন ধীর ও স্থির অবস্থা বোঝাতে ব্যবহৃত হয়।' },
+              { word: 'Tranquil', meaningBn: 'নিরিবিলি ও প্রশান্ত', explanationBn: 'প্রকৃতির স্নিগ্ধ ও নিরিবিলি পরিবেশ বর্ণনা করতে এই শব্দটি ব্যবহৃত হয়।' },
+              { word: 'Placid', meaningBn: 'সৌম্য ও ধীরস্থির', explanationBn: 'সহজে বিচলিত হয় না এমন শান্ত স্বভাব বা স্থির জলরাশি বোঝাতে ব্যবহৃত হয়।' },
+              { word: 'Quiet', meaningBn: 'নীরব, চুপচাপ', explanationBn: 'শব্দহীন বা কম কোলাহলপূর্ণ স্থান বোঝাতে ব্যবহৃত হয়।' }
+            ],
+            antonyms: [
+              { word: 'Chaotic', meaningBn: 'বিশৃঙ্খল', explanationBn: 'যেখানে কোনো নিয়ম-শৃঙ্খলা নেই এবং সবকিছু এলোমেলো হয়ে আছে।' },
+              { word: 'Turbulent', meaningBn: 'অশান্ত, উত্তাল', explanationBn: 'প্রবল অস্থিরতা, ঝড়ো হাওয়া বা প্রচণ্ড গোলযোগপূর্ণ অবস্থা বোঝায়।' },
+              { word: 'Noisy', meaningBn: 'কোলাহলপূর্ণ', explanationBn: 'অতিরিক্ত ও বিরক্তিকর শব্দে ভরা পরিবেশ বোঝাতে ব্যবহৃত হয়।' },
+              { word: 'Agitated', meaningBn: 'উদ্বিগ্ন বা অস্থির', explanationBn: 'মানসিকভাবে অস্থির, চিন্তিত বা উত্তেজিত অবস্থা বোঝায়।' },
+              { word: 'Stormy', meaningBn: 'ঝড়ো, উত্তাল', explanationBn: 'প্রচণ্ড ঝড়বৃষ্টি বা তীব্র অশান্ত পরিস্থিতিকে বোঝায়।' }
+            ]
+          },
+          {
+            id: 'beg-2',
+            word: 'Grateful',
+            imageQuery: 'gratitude thank you hands heart',
+            pos: 'Adjective',
+            ipa: '/ˈɡreɪtfəl/',
+            meaningBn: 'কৃতজ্ঞ, বাধিত',
+            explanationEn: 'Feeling or showing thanks for kindness or help received.',
+            example: 'We are deeply grateful to our teachers for guiding us with patience.',
+            exampleBn: 'ধৈর্য ধরে আমাদের পথ দেখানোর জন্য আমরা আমাদের শিক্ষকদের প্রতি গভীরভাবে কৃতজ্ঞ।',
+            synonyms: [
+              { word: 'Thankful', meaningBn: 'ধন্যবাদজ্ঞাপক, কৃতজ্ঞ', explanationBn: 'কারো উপকার বা আশীর্বাদের জন্য মন থেকে ধন্যবাদ অনুভব করা।' },
+              { word: 'Appreciative', meaningBn: 'গুণগ্রাহী, সমাদরকারী', explanationBn: 'অন্যের ভালো কাজ বা প্রচেষ্টার মূল্য বোঝা ও প্রশংসা করা।' },
+              { word: 'Obliged', meaningBn: 'বাধিত', explanationBn: 'কারো সাহায্যের কারণে ভদ্রভাবে কৃতজ্ঞতা প্রকাশ করা।' },
+              { word: 'Indebted', meaningBn: 'ঋণী, কৃতজ্ঞ', explanationBn: 'অন্যের বড় কোনো অবদানের জন্য নিজেকে কৃতজ্ঞ মনে করা।' },
+              { word: 'Pleased', meaningBn: 'সন্তুষ্ট ও আনন্দিত', explanationBn: 'কারো আন্তরিক ব্যবহারে খুশি ও কৃতজ্ঞ বোধ করা।' }
+            ],
+            antonyms: [
+              { word: 'Ungrateful', meaningBn: 'অকৃতজ্ঞ', explanationBn: 'উপকার পাওয়ার পরও যে কৃতজ্ঞতা স্বীকার করে না।' },
+              { word: 'Thankless', meaningBn: 'অকৃতজ্ঞতাপূর্ণ', explanationBn: 'যে কাজের জন্য কোনো ধন্যবাদ বা স্বীকৃতি পাওয়া যায় না।' },
+              { word: 'Unappreciative', meaningBn: 'অমূল্যায়নকারী', explanationBn: 'অন্যের কষ্ট বা অবদানের গুরুত্ব না দেওয়া।' },
+              { word: 'Resentful', meaningBn: 'ক্ষুব্ধ, অসন্তুষ্ট', explanationBn: 'মনে ক্ষোভ বা বিরক্তি পুষে রাখা।' },
+              { word: 'Selfish', meaningBn: 'স্বার্থপর', explanationBn: 'কেবল নিজের সুবিধার কথা চিন্তা করা এবং অন্যের অবদান ভুলে যাওয়া।' }
+            ]
+          },
+          {
+            id: 'beg-3',
+            word: 'Diligent',
+            imageQuery: 'diligent student studying library books',
+            pos: 'Adjective',
+            ipa: '/ˈdɪlɪdʒənt/',
+            meaningBn: 'পরিশ্রমী, অধ্যবসায়ী',
+            explanationEn: 'Showing careful, steady, and hardworking effort in tasks.',
+            example: 'A diligent student reviews new lessons every evening without fail.',
+            exampleBn: 'একজন পরিশ্রমী শিক্ষার্থী প্রতিদিন সন্ধ্যায় নিয়ম করে নতুন পাঠ রিভিশন দেয়।',
+            synonyms: [
+              { word: 'Hardworking', meaningBn: 'কঠোর পরিশ্রমী', explanationBn: 'নিরলসভাবে এবং মনোযোগ দিয়ে কাজ করে এমন ব্যক্তি।' },
+              { word: 'Attentive', meaningBn: 'মনোযোগী', explanationBn: 'প্রতিটি খুঁটিনাটি বিষয়ের প্রতি সতর্ক ও মনোযোগী থাকা।' },
+              { word: 'Dedicated', meaningBn: 'নিবেদিতপ্রাণ', explanationBn: 'কোনো লক্ষ্য অর্জনে সম্পূর্ণ নিষ্ঠা ও আন্তরিকতা নিয়ে কাজ করা।' },
+              { word: 'Persistent', meaningBn: 'অধ্যবসায়ী, নাছোড়বান্দা', explanationBn: 'বাধা এলেও হাল না ছেড়ে চেষ্টা চালিয়ে যাওয়া।' },
+              { word: 'Thorough', meaningBn: 'নিখুঁত ও সম্পূর্ণ', explanationBn: 'কোনো কাজ তাড়াহুড়ো না করে ভালোভাবে সম্পন্ন করা।' }
+            ],
+            antonyms: [
+              { word: 'Lazy', meaningBn: 'অলস', explanationBn: 'কাজকর্ম বা পরিশ্রম করতে অনীহা প্রকাশ করা।' },
+              { word: 'Careless', meaningBn: 'অসতর্ক, অমনোযোগী', explanationBn: 'যত্ন বা মনোযোগ ছাড়া কাজ করা।' },
+              { word: 'Negligent', meaningBn: 'অবহেলাকারী', explanationBn: 'নিজের দায়িত্ব বা কর্তব্যে অবহেলা করা।' },
+              { word: 'Idle', meaningBn: 'নিষ্ক্রিয়, কর্মহীন', explanationBn: 'কোনো কাজ না করে অলসভাবে সময় কাটানো।' },
+              { word: 'Sluggish', meaningBn: 'মন্থর, ঢিলেঢালা', explanationBn: 'খুব ধীরগতিতে এবং উৎসাহহীনভাবে কাজ করা।' }
+            ]
+          },
+          {
+            id: 'beg-4',
+            word: 'Generous',
+            imageQuery: 'generous giving gift charity',
+            pos: 'Adjective',
+            ipa: '/ˈdʒenərəs/',
+            meaningBn: 'উদার, দানশীল',
+            explanationEn: 'Willing to give help, time, or kindness freely to others.',
+            example: 'Our neighbor is always generous with his time whenever someone needs help.',
+            exampleBn: 'কারো সাহায্যের প্রয়োজন হলে আমাদের প্রতিবেশী সবসময় উদারভাবে নিজের সময় দেন।',
+            synonyms: [
+              { word: 'Kind', meaningBn: 'দয়ালু', explanationBn: 'অন্যের প্রতি সহানুভূতিশীল ও সাহায্যকারী মনোভাব।' },
+              { word: 'Charitable', meaningBn: 'দানশীল', explanationBn: 'অসহায় বা প্রয়োজনগ্রস্ত মানুষকে মুক্তহস্তে সাহায্য করা।' },
+              { word: 'Benevolent', meaningBn: 'পরোপকারী', explanationBn: 'সকলের মঙ্গল কামনা করে এমন উদার হৃদয়।' },
+              { word: 'Giving', meaningBn: 'উদারহস্ত', explanationBn: 'নিজের জিনিস অন্যের সাথে আনন্দের সাথে ভাগ করে নেওয়া।' },
+              { word: 'Noble', meaningBn: 'মহৎ', explanationBn: 'উচ্চ নৈতিক গুণাবলি ও উদার মানসিকতার অধিকারী।' }
+            ],
+            antonyms: [
+              { word: 'Stingy', meaningBn: 'কৃপণ', explanationBn: 'অর্থ বা সাহায্য দিতে অনিচ্ছুক ব্যক্তি।' },
+              { word: 'Greedy', meaningBn: 'লোভী', explanationBn: 'নিজের প্রয়োজনের চেয়েও বেশি পাওয়ার প্রবল আকাঙ্ক্ষা।' },
+              { word: 'Mean', meaningBn: 'নীচ বা অনুদার', explanationBn: 'অন্যের প্রতি সংকীর্ণ ও কঠোর আচরণ করা।' },
+              { word: 'Miserly', meaningBn: 'অত্যন্ত কৃপণ', explanationBn: 'অর্থ জমিয়ে রেখেও দরকারি কাজে খরচ না করা।' },
+              { word: 'Self-centered', meaningBn: 'আত্মকেন্দ্রিক', explanationBn: 'কেবল নিজের স্বার্থ নিয়ে ব্যস্ত থাকা।' }
+            ]
+          },
+          {
+            id: 'beg-5',
+            word: 'Curious',
+            imageQuery: 'curious child magnifying glass nature',
+            pos: 'Adjective',
+            ipa: '/ˈkjʊəriəs/',
+            meaningBn: 'কৌতূহলী, জানতে আগ্রহী',
+            explanationEn: 'Eager to learn, explore, or know more about something.',
+            example: 'Curious children ask wonderful questions about how the stars shine.',
+            exampleBn: 'কৌতূহলী শিশুরা তারারা কীভাবে জ্বলে সে সম্পর্কে চমৎকার সব প্রশ্ন করে।',
+            synonyms: [
+              { word: 'Inquisitive', meaningBn: 'জিজ্ঞাসু', explanationBn: 'নতুন কিছু জানার জন্য সবসময় প্রশ্ন করতে আগ্রহী।' },
+              { word: 'Eager', meaningBn: 'আগ্রহী, উৎসুক', explanationBn: 'কোনো কিছু শেখা বা করার প্রবল ইচ্ছা থাকা।' },
+              { word: 'Interested', meaningBn: 'কৌতূহলী ও মনোযোগী', explanationBn: 'কোনো বিষয়ের প্রতি বিশেষ আকর্ষণ অনুভব করা।' },
+              { word: 'Observant', meaningBn: 'তীক্ষ্ণ পর্যবেক্ষক', explanationBn: 'চারপাশের সবকিছু মনোযোগ দিয়ে লক্ষ্য করা।' },
+              { word: 'Wondering', meaningBn: 'বিস্মিত ও ভাবুক', explanationBn: 'কোনো বিষয় কীভাবে ঘটে তা নিয়ে গভীরভাবে চিন্তা করা।' }
+            ],
+            antonyms: [
+              { word: 'Indifferent', meaningBn: 'উদাসীন', explanationBn: 'কোনো বিষয়ে ভালো বা মন্দ কোনো আগ্রহই না দেখানো।' },
+              { word: 'Bored', meaningBn: 'বিরক্ত, একঘেয়ে', explanationBn: 'কোনো কিছুতে আনন্দ বা আগ্রহ খুঁজে না পাওয়া।' },
+              { word: 'Uninterested', meaningBn: 'অনাগ্রহী', explanationBn: 'নতুন কিছু জানার ইচ্ছা না থাকা।' },
+              { word: 'Apathetic', meaningBn: 'নির্লিপ্ত', explanationBn: 'আবেগ বা উৎসাহহীনভাবে চুপচাপ থাকা।' },
+              { word: 'Incurious', meaningBn: 'কৌতূহলহীন', explanationBn: 'চারপাশের ঘটনা সম্পর্কে জানার কোনো চেষ্টা না করা।' }
+            ]
+          },
+          {
+            id: 'beg-6',
+            word: 'Courage',
+            imageQuery: 'mountain climbing bravery summit courage',
+            pos: 'Noun',
+            ipa: '/ˈkʌrɪdʒ/',
+            meaningBn: 'সাহস, মনোবল',
+            explanationEn: 'The mental strength to face fear, danger, or difficulty.',
+            example: 'It takes real courage to speak honestly in front of a large crowd.',
+            exampleBn: 'বড় জনসমাগমের সামনে সত্য কথা বলতে প্রকৃত সাহসের প্রয়োজন হয়।',
+            synonyms: [
+              { word: 'Bravery', meaningBn: 'বীরত্ব, সাহসিকতা', explanationBn: 'ভয় বা বিপদের সামনে নির্ভীকভাবে দাঁড়ানোর গুণ।' },
+              { word: 'Valor', meaningBn: 'শৌর্যবীর্য', explanationBn: 'কঠিন পরিস্থিতিতে অসাধারণ সাহস প্রদর্শন।' },
+              { word: 'Boldness', meaningBn: 'নির্ভীকতা', explanationBn: 'দ্বিধা না করে আত্মবিশ্বাসের সাথে পদক্ষেপ নেওয়া।' },
+              { word: 'Confidence', meaningBn: 'আত্মবিশ্বাস', explanationBn: 'নিজের সামর্থ্যের ওপর দৃঢ় আস্থা রাখা।' },
+              { word: 'Fearlessness', meaningBn: 'ভয়হীনতা', explanationBn: 'কোনো কিছুতেই ভয় না পাওয়ার মানসিক শক্তি।' }
+            ],
+            antonyms: [
+              { word: 'Cowardice', meaningBn: 'ভীরুতা, কাপুরুষতা', explanationBn: 'ভয় পেয়ে দায়িত্ব বা সত্য থেকে পিছিয়ে আসা।' },
+              { word: 'Fear', meaningBn: 'ভয়, আতঙ্ক', explanationBn: 'বিপদ বা ক্ষতির আশঙ্কায় ভীত হওয়া।' },
+              { word: 'Timidity', meaningBn: 'লাজুকতা ও ভীরুতা', explanationBn: 'সাহস বা আত্মবিশ্বাসের অভাব।' },
+              { word: 'Hesitation', meaningBn: 'দ্বিধা, সংকোচ', explanationBn: 'ভয়ের কারণে সিদ্ধান্ত নিতে ইতস্তত করা।' },
+              { word: 'Weakness', meaningBn: 'দুর্বলতা', explanationBn: 'মানসিক বা শারীরিক শক্তির অভাব।' }
+            ]
+          }
+        ],
+        practiceExtraWords: [
+          {
+            id: 'beg-7',
+            word: 'Harmony',
+            imageQuery: 'harmony orchestra music nature balance',
+            ipa: '/ˈhɑːrməni/',
+            meaningBn: 'সম্প্রীতি, মিল',
+            explanationEn: 'Living or working together peacefully without conflict.',
+            example: 'Neighbors live in harmony when they respect one another.',
+            exampleBn: 'প্রতিবেশীরা একে অপরকে সম্মান করলে তারা সম্প্রীতির সাথে বসবাস করে।'
+          },
+          {
+            id: 'beg-8',
+            word: 'Polite',
+            imageQuery: 'polite handshake courtesy respectful greeting',
+            ipa: '/pəˈlaɪt/',
+            meaningBn: 'ভদ্র, বিনয়ী',
+            explanationEn: 'Having good manners and showing respect to other people.',
+            example: 'Using polite words like please and thank you brightens every day.',
+            exampleBn: 'দয়া করে এবং ধন্যবাদ-এর মতো ভদ্র শব্দ ব্যবহার করলে প্রতিটি দিন সুন্দর হয়ে ওঠে।'
+          }
+        ],
+        dailyWords: [
+          { word: 'Morning Routine', meaningBn: 'সকালের নিয়মিত কাজ', example: 'A healthy morning routine keeps you energetic all day.', exampleBn: 'একটি স্বাস্থ্যকর সকালের রুটিন আপনাকে সারাদিন প্রাণবন্ত রাখে।' },
+          { word: 'Neighborhood', meaningBn: 'পাড়া বা প্রতিবেশী এলাকা', example: 'Our neighborhood park is full of green trees.', exampleBn: 'আমাদের পাড়ার পার্কটি সবুজ গাছে ভরা।' },
+          { word: 'Appreciate', meaningBn: 'প্রশংসা বা কদর করা', example: 'I truly appreciate your kind help today.', exampleBn: 'আজ তোমার আন্তরিক সাহায্যের জন্য আমি সত্যিই কৃতজ্ঞ।' },
+          { word: 'Patience', meaningBn: 'ধৈর্য', example: 'Learning a new language requires daily patience.', exampleBn: 'নতুন কোনো ভাষা শেখার জন্য প্রতিদিন ধৈর্যের প্রয়োজন হয়।' }
+        ],
+        conversations: [
+          {
+            title: 'Dialogue 1: At the Bookshop (বইয়ের দোকানে কথোপকথন)',
+            lines: [
+              { speaker: 'Rafi', en: 'Excuse me, could you help me find an English story book for beginners?', bn: 'মাফ করবেন, আপনি কি আমাকে বিগিনারদের জন্য একটি ইংরেজি গল্পের বই খুঁজে দিতে পারবেন?' },
+              { speaker: 'Shopkeeper', en: 'Of course! Right over here we have illustrated short stories with simple words.', bn: 'অবশ্যই! ঠিক এখানেই সহজ শব্দে লেখা ছবিযুক্ত ছোট গল্পের বই রয়েছে।' },
+              { speaker: 'Rafi', en: 'That looks wonderful. Thank you so much for your kind help!', bn: 'এটি দারুণ লাগছে। আপনার আন্তরিক সাহায্যের জন্য অনেক ধন্যবাদ!' }
+            ]
+          },
+          {
+            title: 'Dialogue 2: Morning Greeting (সকালের কুশল বিনিময়)',
+            lines: [
+              { speaker: 'Nadia', en: 'Good morning, Tariq! You look very cheerful today.', bn: 'সুপ্রভাত, তারিক! আজ তোমাকে খুব হাসিখুশি দেখাচ্ছে।' },
+              { speaker: 'Tariq', en: 'Good morning, Nadia! I woke up early and finished my English practice.', bn: 'সুপ্রভাত, নাদিয়া! আমি খুব ভোরে ঘুম থেকে উঠেছি এবং আমার ইংরেজি অনুশীলন শেষ করেছি।' },
+              { speaker: 'Nadia', en: 'That is a great habit. Let us practice together after class!', bn: 'এটি দারুণ একটি অভ্যাস। চলো ক্লাসের পর আমরা একসাথে অনুশীলন করি!' }
+            ]
+          }
+        ],
+        stories: [
+          {
+            title: 'Story 1: The Little Sparrow and the Kind Boy (ছোট্ট চড়ুই ও দয়ালু বালক)',
+            sentences: [
+              { en: 'One sunny morning, a little boy named Ayaan found a thirsty sparrow in his garden.', bn: 'এক রৌদ্রোজ্জ্বল সকালে, আয়ান নামের একটি ছোট্ট ছেলে তার বাগানে একটি তৃষ্ণার্ত চড়ুই পাখি দেখতে পেল।' },
+              { en: 'He gently placed a small bowl of cool water near the shade of a mango tree.', bn: 'সে একটি আমগাছের ছায়ার কাছে আলতো করে ঠান্ডা পানির একটি ছোট বাটি রাখল।' },
+              { en: 'The little sparrow drank the water happily and chirped a sweet song of thanks.', bn: 'ছোট্ট চড়ুইটি আনন্দের সাথে পানি পান করল এবং ধন্যবাদের মিষ্টি সুরে কিচিরমিচির করে উঠল।' },
+              { en: 'From that day on, the bird visited Ayaan’s window every morning.', bn: 'সেই দিন থেকে পাখিটি প্রতিদিন সকালে আয়ানের জানালার কাছে আসত।' }
+            ]
+          },
+          {
+            title: 'Story 2: The Magic of One Word a Day (প্রতিদিন একটি শব্দের জাদু)',
+            sentences: [
+              { en: 'Mina wanted to speak English fluently, but she felt shy at first.', bn: 'মিনা সাবলীলভাবে ইংরেজি বলতে চাইত, কিন্তু শুরুতে সে লজ্জা পেত।' },
+              { en: 'Her grandmother gave her a small notebook and said, "Learn just three new words every day."', bn: 'তার দাদি তাকে একটি ছোট নোটবুক দিয়ে বললেন, "প্রতিদিন মাত্র তিনটি করে নতুন শব্দ শেখো।"' },
+              { en: 'Mina practiced with patience and used those words while talking with her friends.', bn: 'মিনা ধৈর্য ধরে অনুশীলন করল এবং বন্ধুদের সাথে কথা বলার সময় সেই শব্দগুলো ব্যবহার করল।' },
+              { en: 'Within a few months, she could tell entire stories with confidence and joy.', bn: 'কয়েক মাসের মধ্যেই সে আত্মবিশ্বাস ও আনন্দের সাথে পুরো গল্প বলতে পারত।' }
+            ]
+          }
+        ]
+      },
+
+      /* -------------------------------------------------------------------
+         LEVEL 2: INTERMEDIATE
+      -------------------------------------------------------------------- */
+      intermediate: {
+        id: 'intermediate',
+        title: 'Intermediate',
+        bengaliSubtitle: 'মাধ্যমিক স্তরের শব্দভান্ডার, Phrasal Verbs, Idioms, Collocations এবং শিক্ষণীয় গল্প',
+        words: [
+          {
+            id: 'int-1',
+            word: 'Resilient',
+            imageQuery: 'green sprout growing through rock stone',
+            pos: 'Adjective',
+            ipa: '/rɪˈzɪliənt/',
+            meaningBn: 'স্থিতিস্থাপক, প্রতিকূলতা কাটিয়ে উঠতে সক্ষম',
+            explanationEn: 'Able to recover quickly from difficulties, setbacks, or tough conditions.',
+            example: 'Resilient learners treat every mistake as a stepping stone toward mastery.',
+            exampleBn: 'দৃঢ়চেতা শিক্ষার্থীরা প্রতিটি ভুলকে দক্ষতা অর্জনের সোপান হিসেবে গ্রহণ করে।',
+            synonyms: [
+              { word: 'Adaptable', meaningBn: 'মানিয়ে নিতে সক্ষম', explanationBn: 'নতুন বা কঠিন পরিস্থিতির সাথে সহজে খাপ খাইয়ে নেওয়ার ক্ষমতা।' },
+              { word: 'Tough', meaningBn: 'দৃঢ়, সহনশীল', explanationBn: 'কঠিন চাপ বা কষ্ট সহ্য করার মানসিক ও শারীরিক শক্তি।' },
+              { word: 'Strong', meaningBn: 'শক্তিশালী', explanationBn: 'সহজে ভেঙে পড়ে না এমন দৃঢ় মানসিকতা।' },
+              { word: 'Flexible', meaningBn: 'নমনীয়', explanationBn: 'প্রয়োজন অনুযায়ী নিজের কৌশল পরিবর্তন করতে পারা।' },
+              { word: 'Tenacious', meaningBn: 'দৃঢ়প্রতিজ্ঞ', explanationBn: 'লক্ষ্য অর্জনে শক্তভাবে লেগে থাকার মানসিকতা।' }
+            ],
+            antonyms: [
+              { word: 'Fragile', meaningBn: 'ভঙ্গুর, নাজুক', explanationBn: 'সামান্য আঘাতে বা চাপেই ভেঙে পড়ে এমন।' },
+              { word: 'Weak', meaningBn: 'দুর্বল', explanationBn: 'প্রতিকূলতা মোকাবিলা করার শক্তির অভাব।' },
+              { word: 'Vulnerable', meaningBn: 'অরক্ষিত, সংবেদনশীল', explanationBn: 'সহজে ক্ষতিগ্রস্ত বা আঘাতপ্রাপ্ত হতে পারে এমন।' },
+              { word: 'Rigid', meaningBn: 'অনমনীয়, কঠোর', explanationBn: 'পরিবর্তিত পরিস্থিতির সাথে মানিয়ে নিতে অক্ষম।' },
+              { word: 'Delicate', meaningBn: 'কোমল ও সূক্ষ্ম', explanationBn: 'কঠিন পরিবেশে টিকে থাকার মতো শক্ত নয়।' }
+            ]
+          },
+          {
+            id: 'int-2',
+            word: 'Eloquent',
+            imageQuery: 'orator speech podium public speaking eloquence',
+            pos: 'Adjective',
+            ipa: '/ˈeləkwənt/',
+            meaningBn: 'বাকপটু, প্রাঞ্জল ও প্রভাবশালী',
+            explanationEn: 'Fluent, persuasive, and expressive in speaking or writing.',
+            example: 'Her eloquent speech inspired the entire audience to take action.',
+            exampleBn: 'তার প্রাঞ্জল ও হৃদয়গ্রাহী বক্তব্য পুরো দর্শকসারিকে কাজ করতে অনুপ্রাণিত করেছিল।',
+            synonyms: [
+              { word: 'Articulate', meaningBn: 'স্পষ্টভাষী', explanationBn: 'নিজের চিন্তাভাবনা অত্যন্ত পরিষ্কার ও গুছিয়ে প্রকাশ করতে পারা।' },
+              { word: 'Fluent', meaningBn: 'সাবলীল', explanationBn: 'কোনো জড়তা ছাড়াই স্বতঃস্ফূর্তভাবে কথা বলা বা লেখা।' },
+              { word: 'Expressive', meaningBn: 'ভাবপূর্ণ', explanationBn: 'কথার মাধ্যমে গভীর অনুভূতি ও অর্থ ফুটিয়ে তোলা।' },
+              { word: 'Persuasive', meaningBn: 'প্ররোচনামূলক, যুক্তিনিষ্ঠ', explanationBn: 'যুক্তি দিয়ে অন্যকে সহজেই রাজি করাতে সক্ষম।' },
+              { word: 'Poetic', meaningBn: 'কাব্যিক ও শ্রুতিমধুর', explanationBn: 'অত্যন্ত সুন্দর ও ছন্দময় ভাষায় কথা বলা।' }
+            ],
+            antonyms: [
+              { word: 'Inarticulate', meaningBn: 'অস্পষ্টভাষী', explanationBn: 'নিজের মনের ভাব গুছিয়ে বলতে অক্ষম।' },
+              { word: 'Hesitant', meaningBn: 'দ্বিধাগ্রস্ত', explanationBn: 'কথা বলার সময় বারবার আটকে যাওয়া বা ইতস্তত করা।' },
+              { word: 'Mumbling', meaningBn: 'অস্পষ্টভাবে বিড়বিড় করা', explanationBn: 'পরিষ্কার উচ্চারণ ছাড়া নিচু স্বরে কথা বলা।' },
+              { word: 'Dull', meaningBn: 'নীরস, একঘেয়ে', explanationBn: 'আকর্ষণহীন ও প্রাণহীন বক্তব্য।' },
+              { word: 'Halting', meaningBn: 'থেমে থেমে বলা', explanationBn: 'সাবলীলতার অভাবে থেমে থেমে কথা বলা।' }
+            ]
+          },
+          {
+            id: 'int-3',
+            word: 'Inevitable',
+            imageQuery: 'hourglass sand time passing inevitable',
+            pos: 'Adjective',
+            ipa: '/ɪnˈevɪtəbl/',
+            meaningBn: 'অনিবার্য, যা এড়ানো যায় না',
+            explanationEn: 'Certain to happen and impossible to avoid or prevent.',
+            example: 'With consistent daily practice, steady improvement is inevitable.',
+            exampleBn: 'নিয়মিত দৈনিক অনুশীলনের ফলে ধারাবাহিক উন্নতি অনিবার্য।',
+            synonyms: [
+              { word: 'Unavoidable', meaningBn: 'অপরিহার্য, এড়ানো অসম্ভব', explanationBn: 'যা কোনোভাবেই এড়িয়ে যাওয়া সম্ভব নয়।' },
+              { word: 'Certain', meaningBn: 'নিশ্চিত', explanationBn: 'যা ঘটবেই বলে সম্পূর্ণ নিশ্চিত হওয়া যায়।' },
+              { word: 'Assured', meaningBn: 'সুনিশ্চিত', explanationBn: 'সন্দেহাতীতভাবে নির্ধারিত ফলাফল।' },
+              { word: 'Destined', meaningBn: 'নিয়তি নির্ধারিত', explanationBn: 'পূর্বনির্ধারিত বা অবশ্যম্ভাবী পরিণতি।' },
+              { word: 'Inescapable', meaningBn: 'অবশ্যম্ভাবী', explanationBn: 'যার থেকে নিস্তার বা পালানোর পথ নেই।' }
+            ],
+            antonyms: [
+              { word: 'Avoidable', meaningBn: 'এড়ানো সম্ভব এমন', explanationBn: 'সতর্ক থাকলে যা প্রতিরোধ বা এড়ানো যায়।' },
+              { word: 'Uncertain', meaningBn: 'অনিশ্চিত', explanationBn: 'ঘটবে কি না তা নিশ্চিত নয়।' },
+              { word: 'Preventable', meaningBn: 'প্রতিরোধযোগ্য', explanationBn: 'আগে থেকে ব্যবস্থা নিলে যা থামানো যায়।' },
+              { word: 'Doubtful', meaningBn: 'সন্দেহজনক', explanationBn: 'ঘটার সম্ভাবনা কম বা অনিশ্চিত।' },
+              { word: 'Optional', meaningBn: 'ঐচ্ছিক', explanationBn: 'বাধ্যতামূলক নয়, ইচ্ছার ওপর নির্ভরশীল।' }
+            ]
+          },
+          {
+            id: 'int-4',
+            word: 'Meticulous',
+            imageQuery: 'watchmaker magnifying glass gears meticulous',
+            pos: 'Adjective',
+            ipa: '/məˈtɪkjələs/',
+            meaningBn: 'অত্যন্ত খুঁতখুঁতে ও নিখুঁত',
+            explanationEn: 'Showing great attention to every small detail; very careful and precise.',
+            example: 'The architect kept meticulous notes on every measurement of the bridge.',
+            exampleBn: 'স্থপতি সেতুটির প্রতিটি পরিমাপের ওপর অত্যন্ত নিখুঁত নোট রেখেছিলেন।',
+            synonyms: [
+              { word: 'Precise', meaningBn: 'সুনির্দিষ্ট ও নির্ভুল', explanationBn: 'একদম সঠিক মাপ বা তথ্য অনুযায়ী কাজ করা।' },
+              { word: 'Careful', meaningBn: 'সতর্ক ও যত্নশীল', explanationBn: 'ভুল এড়াতে অত্যন্ত মনোযোগ দিয়ে কাজ করা।' },
+              { word: 'Scrupulous', meaningBn: 'নীতিবান ও নিখুঁত', explanationBn: 'প্রতিটি নিয়ম ও খুঁটিনাটি নিষ্ঠার সাথে মেনে চলা।' },
+              { word: 'Detailed', meaningBn: 'বিস্তারিত', explanationBn: 'কোনো অংশ বাদ না দিয়ে সম্পূর্ণ বিবরণসহ করা।' },
+              { word: 'Exact', meaningBn: 'যথাযথ', explanationBn: 'হুবহু সঠিক ও ত্রুটিমুক্ত।' }
+            ],
+            antonyms: [
+              { word: 'Sloppy', meaningBn: 'অগোছালো ও অযত্নশীল', explanationBn: 'তাড়াহুড়ো করে ভুলভ্রান্তিসহ কাজ করা।' },
+              { word: 'Careless', meaningBn: 'অসতর্ক', explanationBn: 'মনোযোগের অভাবে ভুল করা।' },
+              { word: 'Hasty', meaningBn: 'তাড়াহুড়োপূর্ণ', explanationBn: 'পর্যাপ্ত সময় না নিয়ে দ্রুত সেরে ফেলা।' },
+              { word: 'Neglectful', meaningBn: 'অবহেলাপূর্ণ', explanationBn: 'গুরুত্বপূর্ণ বিষয়ে নজর না দেওয়া।' },
+              { word: 'Messy', meaningBn: 'বিশৃঙ্খল', explanationBn: 'পরিচ্ছন্নতা বা শৃঙ্খলার অভাব।' }
+            ]
+          },
+          {
+            id: 'int-5',
+            word: 'Collaborate',
+            imageQuery: 'teamwork puzzle collaboration brainstorming meeting',
+            pos: 'Verb',
+            ipa: '/kəˈlæbəreɪt/',
+            meaningBn: 'একসাথে কাজ করা, সহযোগিতা করা',
+            explanationEn: 'To work jointly with others to achieve a shared goal.',
+            example: 'Students from different cities collaborate online to build science projects.',
+            exampleBn: 'বিভিন্ন শহরের শিক্ষার্থীরা বিজ্ঞান প্রকল্প তৈরির জন্য অনলাইনে একসাথে কাজ করে।',
+            synonyms: [
+              { word: 'Cooperate', meaningBn: 'সহযোগিতা করা', explanationBn: 'পারস্পরিক সাহায্যের মাধ্যমে একসাথে কাজ এগিয়ে নেওয়া।' },
+              { word: 'Partner', meaningBn: 'অংশীদার হওয়া', explanationBn: 'যৌথভাবে কোনো উদ্যোগ গ্রহণ করা।' },
+              { word: 'Team up', meaningBn: 'দলবদ্ধ হওয়া', explanationBn: 'একটি দল হিসেবে একত্রিত হয়ে কাজ করা।' },
+              { word: 'Unite', meaningBn: 'ঐক্যবদ্ধ হওয়া', explanationBn: 'একই উদ্দেশ্যে একসাথে যুক্ত হওয়া।' },
+              { word: 'Coordinate', meaningBn: 'সমন্বয় করা', explanationBn: 'সবার কাজের মধ্যে সুশৃঙ্খল সংযোগ রাখা।' }
+            ],
+            antonyms: [
+              { word: 'Compete', meaningBn: 'প্রতিযোগিতা করা', explanationBn: 'একে অপরকে ছাড়িয়ে যাওয়ার চেষ্টা করা।' },
+              { word: 'Oppose', meaningBn: 'বিরোধিতা করা', explanationBn: 'কোনো কাজের বিপক্ষে অবস্থান নেওয়া।' },
+              { word: 'Isolate', meaningBn: 'আলাদা থাকা', explanationBn: 'অন্যদের থেকে বিচ্ছিন্ন হয়ে একা কাজ করা।' },
+              { word: 'Divide', meaningBn: 'বিভক্ত করা', explanationBn: 'একতা ভেঙে আলাদা করে ফেলা।' },
+              { word: 'Hinder', meaningBn: 'বাধা সৃষ্টি করা', explanationBn: 'অন্যের কাজের গতি কমিয়ে দেওয়া।' }
+            ]
+          },
+          {
+            id: 'int-6',
+            word: 'Insight',
+            imageQuery: 'lightbulb idea insight revelation thinking',
+            pos: 'Noun',
+            ipa: '/ˈɪnsaɪt/',
+            meaningBn: 'গভীর অন্তর্দৃষ্টি, সূক্ষ্ম উপলব্ধি',
+            explanationEn: 'A deep and clear understanding of a complex person or situation.',
+            example: 'Reading biographies gives valuable insight into how leaders overcome failure.',
+            exampleBn: 'জীবনী পাঠ করলে নেতারা কীভাবে ব্যর্থতা জয় করেন সে সম্পর্কে মূল্যবান অন্তর্দৃষ্টি পাওয়া যায়।',
+            synonyms: [
+              { word: 'Understanding', meaningBn: 'বোধগম্যতা, উপলব্ধি', explanationBn: 'কোনো বিষয়ের মূল অর্থ গভীরভাবে বুঝতে পারা।' },
+              { word: 'Perception', meaningBn: 'অনুধাবন ক্ষমতা', explanationBn: 'তীক্ষ্ণ দৃষ্টিতে সত্য বা বাস্তবতা চিনতে পারা।' },
+              { word: 'Wisdom', meaningBn: 'প্রজ্ঞা, জ্ঞান', explanationBn: 'অভিজ্ঞতা ও গভীর চিন্তা থেকে অর্জিত জ্ঞান।' },
+              { word: 'Clarity', meaningBn: 'স্বচ্ছতা', explanationBn: 'কোনো জটিল বিষয় পরিষ্কারভাবে দেখতে পাওয়া।' },
+              { word: 'Awareness', meaningBn: 'সচেতনতা', explanationBn: 'চারপাশের বাস্তবতা সম্পর্কে সজাগ জ্ঞান।' }
+            ],
+            antonyms: [
+              { word: 'Ignorance', meaningBn: 'অজ্ঞতা', explanationBn: 'কোনো বিষয় সম্পর্কে জ্ঞানের অভাব।' },
+              { word: 'Confusion', meaningBn: 'বিভ্রান্তি', explanationBn: 'কোনো কিছু পরিষ্কারভাবে বুঝতে না পারার অবস্থা।' },
+              { word: 'Blindness', meaningBn: 'অন্ধত্ব বা অদূরদর্শিতা', explanationBn: 'বাস্তব সত্য দেখতে বা বুঝতে না পারা।' },
+              { word: 'Misunderstanding', meaningBn: 'ভুল বোঝাবুঝি', explanationBn: 'কোনো বিষয়ের ভুল অর্থ গ্রহণ করা।' },
+              { word: 'Naivety', meaningBn: 'অনভিজ্ঞতা', explanationBn: 'বাস্তব জটিলতা সম্পর্কে ধারণার অভাব।' }
+            ]
+          }
+        ],
+        practiceExtraWords: [
+          {
+            id: 'int-7',
+            word: 'Momentum',
+            imageQuery: 'rolling boulder momentum physics velocity',
+            ipa: '/məʊˈmentəm/',
+            meaningBn: 'গতিবেগ, অগ্রগতির ধারা',
+            explanationEn: 'The strength or force gained by continuous motion or progress.',
+            example: 'Once you build study momentum, learning feels natural every day.',
+            exampleBn: 'একবার পড়াশোনার গতি তৈরি হয়ে গেলে প্রতিদিন শেখাটা স্বাভাবিক মনে হয়।'
+          },
+          {
+            id: 'int-8',
+            word: 'Versatile',
+            imageQuery: 'swiss army knife versatile multi-tool',
+            ipa: '/ˈvɜːrsətaɪl/',
+            meaningBn: 'বহুমুখী প্রতিভাধর বা ব্যবহারযোগ্য',
+            explanationEn: 'Able to adapt or be used for many different functions or activities.',
+            example: 'A versatile vocabulary helps you express ideas in any situation.',
+            exampleBn: 'একটি বহুমুখী শব্দভান্ডার যেকোনো পরিস্থিতিতে আপনার ভাব প্রকাশ করতে সাহায্য করে।'
+          }
+        ],
+        phrasalVerbs: [
+          { phrase: 'Figure out', meaningBn: 'সমাধান বা অর্থ খুঁজে বের করা', example: 'It took me ten minutes to figure out the puzzle.', exampleBn: 'ধাঁধাটির সমাধান বের করতে আমার দশ মিনিট সময় লেগেছিল।' },
+          { phrase: 'Carry on', meaningBn: 'চালিয়ে যাওয়া', example: 'Even when it rained, the runners decided to carry on.', exampleBn: 'বৃষ্টি শুরু হলেও দৌড়বিদরা দৌড় চালিয়ে যাওয়ার সিদ্ধান্ত নিলেন।' },
+          { phrase: 'Look forward to', meaningBn: 'সাগ্রহে অপেক্ষা করা', example: 'I look forward to meeting you at the workshop.', exampleBn: 'কর্মশালায় আপনার সাথে দেখা করার জন্য আমি সাগ্রহে অপেক্ষা করছি।' },
+          { phrase: 'Come up with', meaningBn: 'নতুন ধারণা বা পরিকল্পনা বের করা', example: 'She came up with a brilliant idea for our presentation.', exampleBn: 'সে আমাদের প্রেজেন্টেশনের জন্য একটি চমৎকার ধারণা বের করেছিল।' }
+        ],
+        idioms: [
+          { idiom: 'Break the ice', meaningBn: 'জড়তা কাটিয়ে কথাবার্তা শুরু করা', example: 'The host told a funny story to break the ice at the meeting.', exampleBn: 'সভার শুরুতে জড়তা কাটানোর জন্য সঞ্চালক একটি মজার গল্প বললেন।' },
+          { idiom: 'A blessing in disguise', meaningBn: 'আপাতদৃষ্টিতে খারাপ মনে হলেও আখেরে কল্যাণকর', example: 'Missing that train turned out to be a blessing in disguise.', exampleBn: 'ওই ট্রেনটি মিস করাটা শেষ পর্যন্ত শাপে বর হয়ে দাঁড়িয়েছিল।' },
+          { idiom: 'Hit the nail on the head', meaningBn: 'একদম সঠিক কথা বলা', example: 'You hit the nail on the head with your analysis of the problem.', exampleBn: 'সমস্যাটির বিশ্লেষণে তুমি একদম সঠিক কথাটিই বলেছ।' },
+          { idiom: 'Once in a blue moon', meaningBn: 'খুবই কদাচিৎ বা মাঝেমধ্যে', example: 'He lives abroad, so we see him once in a blue moon.', exampleBn: 'সে বিদেশে থাকে, তাই তাকে আমরা খুব কদাচিৎ দেখতে পাই।' }
+        ],
+        collocations: [
+          { pair: 'Make progress', meaningBn: 'উন্নতি করা', example: 'You will make rapid progress if you read aloud daily.', exampleBn: 'প্রতিদিন উচ্চস্বরে পড়লে তুমি দ্রুত উন্নতি করবে।' },
+          { pair: 'Take responsibility', meaningBn: 'দায়িত্ব গ্রহণ করা', example: 'Good leaders always take responsibility for their decisions.', exampleBn: 'ভালো নেতারা সবসময় তাদের সিদ্ধান্তের দায়িত্ব গ্রহণ করেন।' },
+          { pair: 'Pay close attention', meaningBn: 'গভীর মনোযোগ দেওয়া', example: 'Pay close attention to how native speakers stress syllables.', exampleBn: 'নেটিভ স্পিকাররা কীভাবে শব্দাংশে জোর দেন সেদিকে গভীর মনোযোগ দাও।' },
+          { pair: 'Reach a consensus', meaningBn: 'ঐকমত্যে পৌঁছানো', example: 'After an hour of discussion, the committee reached a consensus.', exampleBn: 'এক ঘণ্টা আলোচনার পর কমিটি একটি ঐকমত্যে পৌঁছাল।' }
+        ],
+        sentencePatterns: [
+          { pattern: 'Not only + Aux + Subject..., but also...', meaningBn: 'শুধু এটিই নয়, বরং ওটিও...', example: 'Reading aloud not only improves pronunciation, but it also builds speaking confidence.', exampleBn: 'উচ্চস্বরে পড়া শুধু উচ্চারণই উন্নত করে না, বরং এটি কথা বলার আত্মবিশ্বাসও গড়ে তোলে।' },
+          { pattern: 'The more + Subject + Verb, the more...', meaningBn: 'যত বেশি..., তত বেশি...', example: 'The more consistently you review words, the longer you remember them.', exampleBn: 'তুমি যত নিয়মিত শব্দগুলো রিভিশন দেবে, তত দীর্ঘদিন সেগুলো মনে রাখতে পারবে।' },
+          { pattern: 'Despite / In spite of + Verb-ing, Clause', meaningBn: 'সত্ত্বেও...', example: 'Despite having a busy schedule, she practices English for twenty minutes every night.', exampleBn: 'ব্যস্ত সময়সূচি থাকা সত্ত্বেও সে প্রতিদিন রাতে বিশ মিনিট ইংরেজি অনুশীলন করে।' },
+          { pattern: 'It is essential that + Subject + Base Verb', meaningBn: 'এটি অত্যন্ত জরুরি যে...', example: 'It is essential that every learner practice new words in full sentences.', exampleBn: 'এটি অত্যন্ত জরুরি যে প্রতিটি শিক্ষার্থী পূর্ণ বাক্যে নতুন শব্দ অনুশীলন করবে।' }
+        ],
+        stories: [
+          {
+            title: 'Story 1: The Bridge Across the Valley (উপত্যকার ওপর সেতু)',
+            sentences: [
+              { en: 'Two neighboring villages were separated by a wide river that flooded every monsoon.', bn: 'দুটি প্রতিবেশী গ্রাম একটি প্রশস্ত নদী দ্বারা বিচ্ছিন্ন ছিল যা প্রতি বর্ষায় প্লাবিত হতো।' },
+              { en: 'Instead of complaining, the villagers decided to collaborate and build a wooden bridge.', bn: 'অভিযোগ করার পরিবর্তে গ্রামবাসীরা একসাথে কাজ করে একটি কাঠের সেতু নির্মাণের সিদ্ধান্ত নিল।' },
+              { en: 'The elders shared meticulous plans while the youth carried timber with resilient energy.', bn: 'প্রবীণরা নিখুঁত পরিকল্পনা ভাগ করে নিলেন আর তরুণরা অদম্য শক্তিতে কাঠ বয়ে আনল।' },
+              { en: 'When the bridge opened, trade and friendship flourished between both communities.', bn: 'সেতুটি চালু হওয়ার পর উভয় জনগোষ্ঠীর মধ্যে বাণিজ্য ও বন্ধুত্ব সমৃদ্ধ হয়ে উঠল।' }
+            ]
+          },
+          {
+            title: 'Story 2: The Lighthouse Keeper’s Journal (বাতিঘর রক্ষকের দিনলিপি)',
+            sentences: [
+              { en: 'Every evening, Kabir climbed the spiral stairs of the coastal lighthouse before sunset.', bn: 'প্রতিদিন সন্ধ্যায় সূর্যাস্তের আগে কবির উপকূলীয় বাতিঘরের প্যাঁচানো সিঁড়ি বেয়ে ওপরে উঠতেন।' },
+              { en: 'He polished the glass lens so sailors could navigate safely through stormy nights.', bn: 'তিনি কাঁচের লেন্সটি ঘষে পরিষ্কার করতেন যাতে নাবিকরা ঝড়ো রাতে নিরাপদে পথ চলতে পারেন।' },
+              { en: 'Though his work was quiet, its impact on passing ships was inevitable and life-saving.', bn: 'যদিও তার কাজটি ছিল নীরব, তবুও অতিক্রমকারী জাহাজগুলোর ওপর এর প্রভাব ছিল অনিবার্য ও জীবনরক্ষাকারী।' },
+              { en: 'His journal reminded young visitors that small daily duties create lasting safety.', bn: 'তার দিনলিপি তরুণ দর্শনার্থীদের মনে করিয়ে দিত যে প্রতিদিনের ছোট দায়িত্বগুলোই দীর্ঘস্থায়ী নিরাপত্তা তৈরি করে।' }
+            ]
+          }
+        ]
+      },
+
+      /* -------------------------------------------------------------------
+         LEVEL 3: ADVANCED
+      -------------------------------------------------------------------- */
+      advanced: {
+        id: 'advanced',
+        title: 'Advanced',
+        bengaliSubtitle: 'C1–C2 একাডেমিক শব্দভান্ডার, Formal Transformations, Word Formation এবং বিশ্লেষণধর্মী পাঠ',
+        words: [
+          {
+            id: 'adv-1',
+            word: 'Ephemeral',
+            imageQuery: 'cherry blossom petals morning dew ephemeral',
+            pos: 'Adjective',
+            ipa: '/ɪˈfemərəl/',
+            meaningBn: 'ক্ষণস্থায়ী, স্বল্পস্থায়ী',
+            explanationEn: 'Lasting for a very short, fleeting period of time.',
+            example: 'Morning mist over the river is ephemeral, vanishing as soon as the sun rises.',
+            exampleBn: 'নদীর ওপর সকালের কুয়াশা ক্ষণস্থায়ী, সূর্য ওঠার সাথে সাথেই তা মিলিয়ে যায়।',
+            synonyms: [
+              { word: 'Fleeting', meaningBn: 'দ্রুত বিলীন হয় এমন', explanationBn: 'চোখের পলকে চলে যায় এমন স্বল্পস্থায়ী মুহূর্ত।' },
+              { word: 'Transient', meaningBn: 'অস্থায়ী, ক্ষণিক', explanationBn: 'এক জায়গায় বা অবস্থায় বেশিক্ষণ স্থায়ী হয় না এমন।' },
+              { word: 'Momentary', meaningBn: 'মুহূর্তমাত্র স্থায়ী', explanationBn: 'মাত্র কয়েক মুহূর্তের জন্য স্থায়ী হয় এমন।' },
+              { word: 'Brief', meaningBn: 'সংক্ষিপ্ত', explanationBn: 'সময়কালের দিক থেকে খুব ছোট।' },
+              { word: 'Short-lived', meaningBn: 'স্বল্পায়ু', explanationBn: 'খুব অল্প সময়ের জন্য টিকে থাকে এমন।' }
+            ],
+            antonyms: [
+              { word: 'Permanent', meaningBn: 'স্থায়ী, চিরস্থায়ী', explanationBn: 'যা দীর্ঘকাল বা সবসময়ের জন্য অপরিবর্তিত থাকে।' },
+              { word: 'Eternal', meaningBn: 'অনন্ত, শাশ্বত', explanationBn: 'যার কোনো শুরু বা শেষ নেই।' },
+              { word: 'Enduring', meaningBn: 'দীর্ঘস্থায়ী ও সহনশীল', explanationBn: 'সময়ের পরীক্ষায় টিকে থাকে এমন।' },
+              { word: 'Perpetual', meaningBn: 'চিরন্তন, অবিরাম', explanationBn: 'বিরতিহীনভাবে চলতে থাকে এমন।' },
+              { word: 'Lasting', meaningBn: 'টেকসই', explanationBn: 'দীর্ঘ সময় ধরে প্রভাব বজায় রাখে এমন।' }
+            ]
+          },
+          {
+            id: 'adv-2',
+            word: 'Ubiquitous',
+            imageQuery: 'smartphone global internet connectivity ubiquitous',
+            pos: 'Adjective',
+            ipa: '/juːˈbɪkwɪtəs/',
+            meaningBn: 'সর্বব্যাপী, সর্বত্র বিরাজমান',
+            explanationEn: 'Present, appearing, or found everywhere at the same time.',
+            example: 'Smartphones have become ubiquitous tools in modern academic and social life.',
+            exampleBn: 'আধুনিক একাডেমিক ও সামাজিক জীবনে স্মার্টফোন সর্বব্যাপী যন্ত্রে পরিণত হয়েছে।',
+            synonyms: [
+              { word: 'Omnipresent', meaningBn: 'সর্বত্র উপস্থিত', explanationBn: 'একই সময়ে সব জায়গায় বিদ্যমান থাকা।' },
+              { word: 'Pervasive', meaningBn: 'ব্যাপকভাবে বিস্তৃত', explanationBn: 'সমাজের বা পরিবেশের সর্বত্র ছড়িয়ে পড়া।' },
+              { word: 'Universal', meaningBn: 'সর্বজনীন', explanationBn: 'সকলের কাছে বা সব স্থানে প্রযোজ্য।' },
+              { word: 'Widespread', meaningBn: 'বিস্তৃত', explanationBn: 'বিশাল এলাকা জুড়ে ছড়িয়ে থাকা।' },
+              { word: 'Ever-present', meaningBn: 'সদা বিদ্যমান', explanationBn: 'সবসময় উপস্থিত থাকে এমন।' }
+            ],
+            antonyms: [
+              { word: 'Rare', meaningBn: 'বিরল, দুর্লভ', explanationBn: 'যা খুব কম জায়গায় বা কদাচিৎ দেখা যায়।' },
+              { word: 'Scarce', meaningBn: 'অপ্রতুল', explanationBn: 'প্রয়োজনের তুলনায় খুব কম পরিমাণে থাকা।' },
+              { word: 'Localized', meaningBn: 'সীমাবদ্ধ এলাকাভিত্তিক', explanationBn: 'কেবল নির্দিষ্ট একটি ছোট অঞ্চলে সীমাবদ্ধ।' },
+              { word: 'Uncommon', meaningBn: 'অসাধারণ বা বিরল', explanationBn: 'সচরাচর দেখা যায় না এমন।' },
+              { word: 'Isolated', meaningBn: 'বিচ্ছিন্ন', explanationBn: 'মূল ধারা থেকে আলাদা হয়ে থাকা।' }
+            ]
+          },
+          {
+            id: 'adv-3',
+            word: 'Pragmatic',
+            imageQuery: 'practical architect blueprint construction pragmatic',
+            pos: 'Adjective',
+            ipa: '/præɡˈmætɪk/',
+            meaningBn: 'বাস্তববাদী, প্রয়োগবাদী',
+            explanationEn: 'Dealing with problems sensibly and realistically based on practical outcomes.',
+            example: 'A pragmatic policy focuses on measurable results rather than abstract theory.',
+            exampleBn: 'একটি বাস্তববাদী নীতি বিমূর্ত তত্ত্বের চেয়ে পরিমাপযোগ্য ফলাফলের ওপর গুরুত্ব দেয়।',
+            synonyms: [
+              { word: 'Practical', meaningBn: 'ব্যবহারিক ও বাস্তবসম্মত', explanationBn: 'বাস্তব জীবনে কাজে লাগানো যায় এমন।' },
+              { word: 'Realistic', meaningBn: 'বাস্তবধর্মী', explanationBn: 'কল্পনা নয় বরং বাস্তব পরিস্থিতি বিবেচনা করে সিদ্ধান্ত নেওয়া।' },
+              { word: 'Sensible', meaningBn: 'বিচক্ষণ, যুক্তিসঙ্গত', explanationBn: 'সুস্থ বুদ্ধি ও বিবেচনাপ্রসূত।' },
+              { word: 'Rational', meaningBn: 'যুক্তিবাদী', explanationBn: 'আবেগের বদলে যুক্তির ওপর ভিত্তি করে চলা।' },
+              { word: 'Matter-of-fact', meaningBn: 'সরাসরি ও বাস্তবমুখী', explanationBn: 'অতিরিক্ত আবেগ ছাড়া সোজাসুজি বাস্তব কথা বলা।' }
+            ],
+            antonyms: [
+              { word: 'Idealistic', meaningBn: 'আদর্শবাদী (অবাস্তব কল্পনাপ্রবণ)', explanationBn: 'বাস্তব সীমাবদ্ধতা ভুলে নিখুঁত আদর্শের কল্পনা করা।' },
+              { word: 'Impractical', meaningBn: 'অবাস্তব', explanationBn: 'বাস্তবে প্রয়োগ করা কঠিন বা অসম্ভব।' },
+              { word: 'Visionary', meaningBn: 'কাল্পনিক বা স্বপ্নদর্শী', explanationBn: 'বর্তমান বাস্তবতার চেয়ে দূরের কল্পনায় মগ্ন।' },
+              { word: 'Irrational', meaningBn: 'অযৌক্তিক', explanationBn: 'যুক্তি বা বাস্তবতার সাথে সঙ্গতিহীন।' },
+              { word: 'Quixotic', meaningBn: 'অতি কাল্পনিক', explanationBn: 'অবাস্তব ও রোমান্টিক কল্পনায় বিভোর।' }
+            ]
+          },
+          {
+            id: 'adv-4',
+            word: 'Scrutinize',
+            imageQuery: 'magnifying glass examining document forensic scrutinize',
+            pos: 'Verb',
+            ipa: '/ˈskruːtənaɪz/',
+            meaningBn: 'খুঁটিয়ে পরীক্ষা করা, চুলচেরা বিশ্লেষণ করা',
+            explanationEn: 'To examine or inspect something closely and thoroughly.',
+            example: 'Peer reviewers scrutinize every statistical claim before publishing a research paper.',
+            exampleBn: 'গবেষণাপত্র প্রকাশের আগে সমপর্যায়ের পর্যালোচকরা প্রতিটি পরিসংখ্যানগত দাবি খুঁটিয়ে পরীক্ষা করেন।',
+            synonyms: [
+              { word: 'Examine', meaningBn: 'পরীক্ষা করা', explanationBn: 'গভীর মনোযোগ দিয়ে কোনো কিছু যাচাই করা।' },
+              { word: 'Inspect', meaningBn: 'পরিদর্শন ও যাচাই করা', explanationBn: 'ত্রুটি বা মান যাচাইয়ের জন্য কাছ থেকে দেখা।' },
+              { word: 'Analyze', meaningBn: 'বিশ্লেষণ করা', explanationBn: 'কোনো বিষয়কে ছোট ছোট অংশে ভাগ করে বোঝা।' },
+              { word: 'Investigate', meaningBn: 'তদন্ত বা অনুসন্ধান করা', explanationBn: 'সত্য উদঘাটনের জন্য গভীরভাবে খোঁজ নেওয়া।' },
+              { word: 'Audit', meaningBn: 'নিরীক্ষা করা', explanationBn: 'আনুষ্ঠানিকভাবে হিসাব বা তথ্যের নির্ভুলতা যাচাই করা।' }
+            ],
+            antonyms: [
+              { word: 'Overlook', meaningBn: 'উপেক্ষা করা বা চোখ এড়িয়ে যাওয়া', explanationBn: 'কোনো ভুল বা তথ্য লক্ষ্য না করে বাদ দেওয়া।' },
+              { word: 'Glance', meaningBn: 'একনজর তাকানো', explanationBn: 'গভীরভাবে না দেখে দ্রুত চোখ বুলিয়ে নেওয়া।' },
+              { word: 'Ignore', meaningBn: 'অগ্রাহ্য করা', explanationBn: 'ইচ্ছাকৃতভাবে কোনো বিষয়ে মনোযোগ না দেওয়া।' },
+              { word: 'Skim', meaningBn: 'ভাসাভাসা পড়া', explanationBn: 'বিস্তারিত না পড়ে ওপর ওপর দেখে যাওয়া।' },
+              { word: 'Neglect', meaningBn: 'অবহেলা করা', explanationBn: 'যথাযথ যত্ন বা পরীক্ষা না করা।' }
+            ]
+          },
+          {
+            id: 'adv-5',
+            word: 'Quintessential',
+            imageQuery: 'classic vintage pocket watch quintessential',
+            pos: 'Adjective',
+            ipa: '/ˌkwɪntɪˈsenʃl/',
+            meaningBn: 'সর্বোৎকৃষ্ট, আদর্শ ও খাঁটি উদাহরণস্বরূপ',
+            explanationEn: 'Representing the most perfect or typical example of a quality or class.',
+            example: 'She is the quintessential scholar, combining deep curiosity with rigorous discipline.',
+            exampleBn: 'তিনি একজন আদর্শ গবেষকের সর্বোৎকৃষ্ট উদাহরণ, যিনি গভীর কৌতূহলের সাথে কঠোর শৃঙ্খলার সমন্বয় ঘটিয়েছেন।',
+            synonyms: [
+              { word: 'Archetypal', meaningBn: 'আদি ও আদর্শরূপ', explanationBn: 'কোনো শ্রেণির মূল বা আদর্শ বৈশিষ্ট্য বহন করে এমন।' },
+              { word: 'Classic', meaningBn: 'চিরায়ত ও উৎকৃষ্ট', explanationBn: 'সর্বজনস্বীকৃত এবং সর্বোচ্চ মানের উদাহরণ।' },
+              { word: 'Definitive', meaningBn: 'চূড়ান্ত ও প্রামাণ্য', explanationBn: 'যা সবচেয়ে নির্ভরযোগ্য ও পূর্ণাঙ্গ মানদণ্ড হিসেবে বিবেচিত।' },
+              { word: 'Exemplary', meaningBn: 'অনুকরণীয় ও আদর্শ', explanationBn: 'অন্যদের জন্য অনুসরণযোগ্য সেরা উদাহরণ।' },
+              { word: 'Ultimate', meaningBn: 'চরম ও সর্বোচ্চ', explanationBn: 'উৎকর্ষের সর্বোচ্চ পর্যায়ে পৌঁছেছে এমন।' }
+            ],
+            antonyms: [
+              { word: 'Atypical', meaningBn: 'অস্বাভাবিক বা ব্যতিক্রমী', explanationBn: 'সাধারণ বা আদর্শ বৈশিষ্ট্যের সাথে মেলে না এমন।' },
+              { word: 'Uncharacteristic', meaningBn: 'বৈশিষ্ট্যহীন', explanationBn: 'স্বাভাবিক প্রকৃতির বিপরীত আচরণ বা রূপ।' },
+              { word: 'Flawed', meaningBn: 'ত্রুটিপূর্ণ', explanationBn: 'যার মধ্যে অপূর্ণতা বা ভুল রয়েছে।' },
+              { word: 'Mediocre', meaningBn: 'মাঝারি বা সাধারণ মানের', explanationBn: 'বিশেষ কোনো উৎকর্ষহীন গড়পড়তা মান।' },
+              { word: 'Anomalous', meaningBn: 'ব্যতিক্রমধর্মী ও অসঙ্গত', explanationBn: 'স্বাভাবিক নিয়ম বা মানদণ্ড থেকে বিচ্যুত।' }
+            ]
+          },
+          {
+            id: 'adv-6',
+            word: 'Ambiguous',
+            imageQuery: 'foggy forest crossroads diverging path ambiguous',
+            pos: 'Adjective',
+            ipa: '/æmˈbɪɡjuəs/',
+            meaningBn: 'দ্ব্যর্থক, অস্পষ্ট বা একাধিক অর্থবোধক',
+            explanationEn: 'Open to more than one interpretation; not having one obvious meaning.',
+            example: 'The wording of the contract was ambiguous and required legal clarification.',
+            exampleBn: 'চুক্তিপত্রের ভাষা ছিল দ্ব্যর্থক এবং এর জন্য আইনি ব্যাখ্যার প্রয়োজন হয়েছিল।',
+            synonyms: [
+              { word: 'Unclear', meaningBn: 'অস্পষ্ট', explanationBn: 'যা সহজে বা পরিষ্কারভাবে বোঝা যায় না।' },
+              { word: 'Vague', meaningBn: 'আবছা, অনিশ্চিত', explanationBn: 'সুনির্দিষ্ট নয় এমন বক্তব্য বা ধারণা।' },
+              { word: 'Equivocal', meaningBn: 'দ্ব্যর্থবোধক', explanationBn: 'দুই বা ততোধিক অর্থ প্রকাশ করে এমন।' },
+              { word: 'Cryptic', meaningBn: 'রহস্যময় ও দুর্বোধ্য', explanationBn: 'গোপন বা সহজে বোধগম্য নয় এমন অর্থযুক্ত।' },
+              { word: 'Obscure', meaningBn: 'দুর্বোধ্য', explanationBn: 'সাধারণ পাঠকের কাছে অস্পষ্ট বা অজানা।' }
+            ],
+            antonyms: [
+              { word: 'Explicit', meaningBn: 'সুস্পষ্ট ও দ্ব্যর্থহীন', explanationBn: 'কোনো অস্পষ্টতা ছাড়াই সরাসরি ব্যক্ত করা।' },
+              { word: 'Clear', meaningBn: 'পরিষ্কার', explanationBn: 'সহজেই বোধগম্য ও স্বচ্ছ।' },
+              { word: 'Unambiguous', meaningBn: 'একান্ত সুনির্দিষ্ট', explanationBn: 'যার কেবল একটিই স্পষ্ট অর্থ রয়েছে।' },
+              { word: 'Definite', meaningBn: 'নিশ্চিত ও নির্দিষ্ট', explanationBn: 'সুনির্দিষ্ট সীমা বা অর্থযুক্ত।' },
+              { word: 'Lucid', meaningBn: 'প্রাঞ্জল ও সহজবোধ্য', explanationBn: 'অত্যন্ত পরিষ্কার ও সাবলীলভাবে প্রকাশিত।' }
+            ]
+          }
+        ],
+        practiceExtraWords: [
+          {
+            id: 'adv-7',
+            word: 'Nuance',
+            imageQuery: 'artist oil paint color palette blending nuance',
+            ipa: '/ˈnjuːɑːns/',
+            meaningBn: 'সূক্ষ্ম পার্থক্য বা ভাবের সূক্ষ্মতা',
+            explanationEn: 'A subtle difference in meaning, expression, or sound.',
+            example: 'Mastering nuance allows writers to convey complex emotions effortlessly.',
+            exampleBn: 'ভাবের সূক্ষ্মতা আয়ত্ত করলে লেখকরা জটিল অনুভূতিগুলো অনায়াসে প্রকাশ করতে পারেন।'
+          },
+          {
+            id: 'adv-8',
+            word: 'Synthesis',
+            imageQuery: 'chemistry flask laboratory synthesis reaction',
+            ipa: '/ˈsɪnθəsɪs/',
+            meaningBn: 'সমন্বয়, সংশ্লেষণ',
+            explanationEn: 'The combination of separate ideas or elements to form a coherent whole.',
+            example: 'Her essay offers a brilliant synthesis of history and modern economics.',
+            exampleBn: 'তার প্রবন্ধটি ইতিহাস এবং আধুনিক অর্থনীতির এক চমৎকার সমন্বয় উপস্থাপন করে।'
+          }
+        ],
+        academicVocabulary: [
+          { term: 'Empirical', ipa: '/ɪmˈpɪrɪkl/', meaningBn: 'অভিজ্ঞতালব্ধ ও পর্যবেক্ষণভিত্তিক', example: 'Scientists require empirical evidence before accepting any new theory.', exampleBn: 'নতুন কোনো তত্ত্ব গ্রহণের আগে বিজ্ঞানীদের অভিজ্ঞতালব্ধ প্রমাণের প্রয়োজন হয়।' },
+          { term: 'Paradigm', ipa: '/ˈpærədaɪm/', meaningBn: 'দৃষ্টান্ত বা তাত্ত্বিক কাঠামো', example: 'Renewable technology created a new paradigm in global energy planning.', exampleBn: 'নবায়নযোগ্য প্রযুক্তি বৈশ্বিক জ্বালানি পরিকল্পনায় একটি নতুন দৃষ্টান্ত তৈরি করেছে।' },
+          { term: 'Corroborate', ipa: '/kəˈrɒbəreɪt/', meaningBn: 'অতিরিক্ত তথ্য দিয়ে সমর্থন করা', example: 'Independent archive records corroborate the historian’s primary argument.', exampleBn: 'স্বতন্ত্র আর্কাইভ নথিগুলো ঐতিহাসিকের মূল যুক্তিকে সমর্থন করে।' },
+          { term: 'Dichotomy', ipa: '/daɪˈkɒtəmi/', meaningBn: 'দ্বিবিভাজন বা দুটি বিপরীত ধারার পার্থক্য', example: 'The lecture examined the dichotomy between theoretical models and daily practice.', exampleBn: 'বক্তৃতাটিতে তাত্ত্বিক মডেল এবং দৈনন্দিন অনুশীলনের মধ্যকার পার্থক্য বিশ্লেষণ করা হয়েছিল।' }
+        ],
+        formalTransformations: [
+          { casual: 'Find out more about', formal: 'Investigate / Ascertain', meaningBn: 'আরও তথ্য অনুসন্ধান বা নিশ্চিত করা', example: 'The committee will ascertain the root causes of the delay.', exampleBn: 'কমিটি বিলম্বের মূল কারণগুলো অনুসন্ধান করে নিশ্চিত করবে।' },
+          { casual: 'Give a lot of help', formal: 'Provide substantial assistance', meaningBn: 'উল্লেখযোগ্য সহায়তা প্রদান করা', example: 'Local libraries provide substantial assistance to independent researchers.', exampleBn: 'স্থানীয় গ্রন্থাগারগুলো স্বতন্ত্র গবেষকদের উল্লেখযোগ্য সহায়তা প্রদান করে।' },
+          { casual: 'Show clearly', formal: 'Demonstrate unequivocally', meaningBn: 'দ্ব্যর্থহীনভাবে প্রমাণ বা প্রদর্শন করা', example: 'Recent trials demonstrate unequivocally that early intervention works.', exampleBn: 'সাম্প্রতিক পরীক্ষাগুলো দ্ব্যর্থহীনভাবে প্রমাণ করে যে প্রাথমিক পদক্ষেপ কার্যকর।' },
+          { casual: 'Fix the problem', formal: 'Rectify the discrepancy', meaningBn: 'ত্রুটি বা অসঙ্গতি সংশোধন করা', example: 'Engineers worked overnight to rectify the discrepancy in the dataset.', exampleBn: 'প্রকৌশলীরা ডেটাসেটের অসঙ্গতি সংশোধনের জন্য রাতভর কাজ করেছেন।' }
+        ],
+        wordFormation: [
+          { root: 'Analyze (Verb)', forms: 'Analysis (Noun) • Analytical (Adj) • Analytically (Adv)', example: 'Analytical thinking helps break complex problems into clear steps.', exampleBn: 'বিশ্লেষণাত্মক চিন্তাভাবনা জটিল সমস্যাকে স্পষ্ট ধাপে ভাগ করতে সাহায্য করে।' },
+          { root: 'Innovate (Verb)', forms: 'Innovation (Noun) • Innovative (Adj) • Innovatively (Adv)', example: 'Continuous innovation drives sustainable progress in science.', exampleBn: 'নিরবচ্ছিন্ন উদ্ভাবন বিজ্ঞানে টেকসই অগ্রগতি ত্বরান্বিত করে।' },
+          { root: 'Cohere (Verb)', forms: 'Coherence (Noun) • Coherent (Adj) • Coherently (Adv)', example: 'A coherent argument connects evidence logically from start to finish.', exampleBn: 'একটি সুসংগত যুক্তি শুরু থেকে শেষ পর্যন্ত প্রমাণগুলোকে যৌক্তিকভাবে যুক্ত করে।' },
+          { root: 'Perceive (Verb)', forms: 'Perception (Noun) • Perceptive (Adj) • Perceptively (Adv)', example: 'Perceptive observers notice subtle patterns others easily miss.', exampleBn: 'তীক্ষ্ণ পর্যবেক্ষকরা এমন সূক্ষ্ম ধরন লক্ষ্য করেন যা অন্যরা সহজেই এড়িয়ে যায়।' }
+        ],
+        stories: [
+          {
+            title: 'Passage 1: The Architecture of Human Memory (মানব স্মৃতির গঠনশৈলী)',
+            sentences: [
+              { en: 'Cognitive scientists have long scrutinized how fleeting impressions transform into enduring knowledge.', bn: 'জ্ঞানীয় বিজ্ঞানীরা দীর্ঘদিন ধরে খুঁটিয়ে পরীক্ষা করেছেন কীভাবে ক্ষণস্থায়ী ছাপগুলো দীর্ঘস্থায়ী জ্ঞানে রূপান্তরিত হয়।' },
+              { en: 'Passive repetition rarely produces deep retention unless learners actively retrieve ideas in context.', bn: 'শিক্ষার্থীরা প্রেক্ষাপট অনুযায়ী সক্রিয়ভাবে ধারণাগুলো পুনরুদ্ধার না করলে নিষ্ক্রিয় পুনরাবৃত্তি খুব কমই গভীর স্মৃতি তৈরি করে।' },
+              { en: 'Connecting unfamiliar terms to vivid personal examples builds pragmatic neural pathways.', bn: 'অপরিচিত শব্দগুলোকে জীবন্ত ব্যক্তিগত উদাহরণের সাথে যুক্ত করলে বাস্তবসম্মত স্নায়বিক সংযোগ তৈরি হয়।' },
+              { en: 'Consequently, thoughtful reflection turns isolated vocabulary into an articulate voice.', bn: 'ফলস্বরূপ, সুচিন্তিত অনুধ্যান বিচ্ছিন্ন শব্দভান্ডারকে একটি প্রাঞ্জল কণ্ঠস্বরে পরিণত করে।' }
+            ]
+          },
+          {
+            title: 'Passage 2: Preserving Vanishing Languages (বিলুপ্তপ্রায় ভাষা সংরক্ষণ)',
+            sentences: [
+              { en: 'In an increasingly interconnected world, dominant global languages have become nearly ubiquitous.', bn: 'ক্রমবর্ধমান আন্তঃসংযুক্ত বিশ্বে প্রভাবশালী বৈশ্বিক ভাষাগুলো প্রায় সর্বব্যাপী হয়ে উঠেছে।' },
+              { en: 'Yet every indigenous dialect carries quintessential wisdom about local ecology and human history.', bn: 'তবুও প্রতিটি স্থানীয় উপভাষা আঞ্চলিক বাস্তুসংস্থান এবং মানব ইতিহাসের সর্বোৎকৃষ্ট প্রজ্ঞা বহন করে।' },
+              { en: 'Linguists now collaborate with elder storytellers to archive oral traditions before they fade.', bn: 'ভাষাবিদরা এখন প্রবীণ গল্পকারদের সাথে একসাথে কাজ করছেন যাতে মৌখিক ঐতিহ্য হারিয়ে যাওয়ার আগেই তা সংরক্ষণ করা যায়।' },
+              { en: 'Such archival efforts ensure that cultural diversity remains vibrant for future generations.', bn: 'এই ধরনের সংরক্ষণ প্রচেষ্টা নিশ্চিত করে যে সাংস্কৃতিক বৈচিত্র্য ভবিষ্যৎ প্রজন্মের জন্য প্রাণবন্ত থাকে।' }
+            ]
+          }
+        ]
+      },
+
+      /* -------------------------------------------------------------------
+         LEVEL 4: PRO
+      -------------------------------------------------------------------- */
+      pro: {
+        id: 'pro',
+        title: 'Pro',
+        bengaliSubtitle: 'কর্মক্ষেত্র, Business English, Executive Expressions এবং জটিল বাক্য কাঠামো',
+        words: [
+          {
+            id: 'pro-1',
+            word: 'Mitigate',
+            imageQuery: 'umbrella protection storm barrier mitigate',
+            pos: 'Verb',
+            ipa: '/ˈmɪtɪɡeɪt/',
+            meaningBn: 'প্রশমিত করা, তীব্রতা বা ঝুঁকি কমানো',
+            explanationEn: 'To make a problem, risk, or negative impact less severe or painful.',
+            example: 'Diversifying supply chains helps organizations mitigate unexpected market disruptions.',
+            exampleBn: 'সরবরাহ শৃঙ্খলে বৈচিত্র্য আনলে প্রতিষ্ঠানগুলো অপ্রত্যাশিত বাজার বিপর্যয়ের ঝুঁকি কমাতে পারে।',
+            synonyms: [
+              { word: 'Alleviate', meaningBn: 'উপশম বা লাঘব করা', explanationBn: 'কষ্ট, চাপ বা সমস্যার তীব্রতা কমিয়ে আনা।' },
+              { word: 'Reduce', meaningBn: 'কমানো, হ্রাস করা', explanationBn: 'পরিমাণ বা মাত্রা কমিয়ে আনা।' },
+              { word: 'Diminish', meaningBn: 'হ্রাস করা', explanationBn: 'ধীরে ধীরে প্রভাব বা তীব্রতা কমিয়ে ফেলা।' },
+              { word: 'Lessen', meaningBn: 'লঘু করা', explanationBn: 'কোনো ক্ষতির আশঙ্কা কমিয়ে আনা।' },
+              { word: 'Cushion', meaningBn: 'ধাক্কা সামলানো', explanationBn: 'আকস্মিক ক্ষতির প্রভাব নরম বা সহনীয় করা।' }
+            ],
+            antonyms: [
+              { word: 'Aggravate', meaningBn: 'অধিকতর খারাপ বা তীব্র করা', explanationBn: 'বিদ্যমান সমস্যাকে আরও জটিল করে তোলা।' },
+              { word: 'Intensify', meaningBn: 'তীব্রতর করা', explanationBn: 'কোনো সংকট বা চাপ আরও বাড়িয়ে দেওয়া।' },
+              { word: 'Exacerbate', meaningBn: 'অবনতি ঘটানো', explanationBn: 'খারাপ পরিস্থিতিকে আরও বিষময় করে তোলা।' },
+              { word: 'Escalate', meaningBn: 'দ্রুত বৃদ্ধি করা', explanationBn: 'সংঘাত বা সমস্যাকে ওপরের দিকে নিয়ে যাওয়া।' },
+              { word: 'Worsen', meaningBn: 'আরও খারাপ হওয়া', explanationBn: 'অবস্থার অবনতি ঘটানো।' }
+            ]
+          },
+          {
+            id: 'pro-2',
+            word: 'Expedite',
+            imageQuery: 'high speed bullet train expedite transportation',
+            pos: 'Verb',
+            ipa: '/ˈekspədaɪt/',
+            meaningBn: 'ত্বরান্বিত করা, দ্রুত সম্পন্ন করা',
+            explanationEn: 'To make an action or process happen sooner or be accomplished more quickly.',
+            example: 'Automated verification allowed the team to expedite client onboarding significantly.',
+            exampleBn: 'স্বয়ংক্রিয় যাচাইকরণ দলটিকে ক্লায়েন্ট অনবোর্ডিং প্রক্রিয়া উল্লেখযোগ্যভাবে ত্বরান্বিত করতে সাহায্য করেছে।',
+            synonyms: [
+              { word: 'Accelerate', meaningBn: 'গতি বৃদ্ধি করা', explanationBn: 'কাজের গতি বাড়িয়ে দ্রুত এগিয়ে নেওয়া।' },
+              { word: 'Facilitate', meaningBn: 'সহজতর ও দ্রুত করা', explanationBn: 'বাধা দূর করে কাজ সম্পন্ন হতে সাহায্য করা।' },
+              { word: 'Hasten', meaningBn: 'দ্রুততর করা', explanationBn: 'তাড়াতাড়ি কোনো পদক্ষেপ সম্পন্ন করা।' },
+              { word: 'Streamline', meaningBn: 'সুশৃঙ্খল ও গতিশীল করা', explanationBn: 'অপ্রয়োজনীয় ধাপ বাদ দিয়ে কাজ দ্রুত করা।' },
+              { word: 'Advance', meaningBn: 'এগিয়ে নেওয়া', explanationBn: 'নির্ধারিত সময়ের আগেই অগ্রগতি সাধন করা।' }
+            ],
+            antonyms: [
+              { word: 'Delay', meaningBn: 'বিলম্বিত করা', explanationBn: 'নির্ধারিত সময়ের চেয়ে দেরি করানো।' },
+              { word: 'Hinder', meaningBn: 'বাধাগ্রস্ত করা', explanationBn: 'কাজের স্বাভাবিক গতি আটকে দেওয়া।' },
+              { word: 'Impede', meaningBn: 'ব্যাহত করা', explanationBn: 'প্রতিবন্ধকতা সৃষ্টি করে গতি কমানো।' },
+              { word: 'Obstruct', meaningBn: 'অবরুদ্ধ করা', explanationBn: 'পথ বা প্রক্রিয়া বন্ধ করে দেওয়া।' },
+              { word: 'Stall', meaningBn: 'স্থগিত বা আটকে রাখা', explanationBn: 'অগ্রগতি থামিয়ে দেওয়া।' }
+            ]
+          },
+          {
+            id: 'pro-3',
+            word: 'Astute',
+            imageQuery: 'chess grandmaster strategic thinking player astute',
+            pos: 'Adjective',
+            ipa: '/əˈstjuːt/',
+            meaningBn: 'বিচক্ষণ, তীক্ষ্ণবুদ্ধিসম্পন্ন',
+            explanationEn: 'Having or showing an ability to accurately assess situations and turn them to advantage.',
+            example: 'An astute negotiator listens carefully to unspoken priorities at the table.',
+            exampleBn: 'একজন বিচক্ষণ মধ্যস্থতাকারী আলোচনার টেবিলে অনুক্ত অগ্রাধিকারগুলোও মনোযোগ দিয়ে শোনেন।',
+            synonyms: [
+              { word: 'Shrewd', meaningBn: 'তীক্ষ্ণবুদ্ধি ও দূরদর্শী', explanationBn: 'পরিস্থিতি দ্রুত বুঝে সঠিক সিদ্ধান্ত নেওয়ার ক্ষমতা।' },
+              { word: 'Perceptive', meaningBn: 'সূক্ষ্মদর্শী', explanationBn: 'অন্যের না বলা কথাও সহজে বুঝতে পারা।' },
+              { word: 'Insightful', meaningBn: 'অন্তর্দৃষ্টিসম্পন্ন', explanationBn: 'গভীর বিশ্লেষণী ক্ষমতাসম্পন্ন।' },
+              { word: 'Sagacious', meaningBn: 'প্রাজ্ঞ ও বিচক্ষণ', explanationBn: 'গভীর জ্ঞান ও দূরদর্শিতার সাথে বিচার করতে সক্ষম।' },
+              { word: 'Sharp', meaningBn: 'তীক্ষ্ণ ও চটপটে', explanationBn: 'দ্রুত এবং নির্ভুলভাবে চিন্তা করতে পারা।' }
+            ],
+            antonyms: [
+              { word: 'Naive', meaningBn: 'সরল ও অনভিজ্ঞ', explanationBn: 'বাস্তব জটিলতা না বুঝে সহজে বিশ্বাস করে এমন।' },
+              { word: 'Gullible', meaningBn: 'সহজে প্রতারিত হয় এমন', explanationBn: 'যেকোনো কথা যাচাই না করে বিশ্বাস করা।' },
+              { word: 'Shortsighted', meaningBn: 'অদূরদর্শী', explanationBn: 'ভবিষ্যৎ পরিণতি চিন্তা করতে অক্ষম।' },
+              { word: 'Obtuse', meaningBn: 'স্থূলবুদ্ধি', explanationBn: 'সূক্ষ্ম বিষয় বুঝতে ধীর বা অক্ষম।' },
+              { word: 'Foolish', meaningBn: 'নির্বোধ', explanationBn: 'বিবেচনাহীন আচরণ বা সিদ্ধান্ত নেওয়া।' }
+            ]
+          },
+          {
+            id: 'pro-4',
+            word: 'Unprecedented',
+            imageQuery: 'rocket launch breakthrough achievement unprecedented',
+            pos: 'Adjective',
+            ipa: '/ʌnˈpresɪdentɪd/',
+            meaningBn: 'অভূতপূর্ব, নজিরবিহীন',
+            explanationEn: 'Never done, experienced, or known before in history or industry.',
+            example: 'The engineering team achieved unprecedented efficiency during the global rollout.',
+            exampleBn: 'প্রকৌশল দলটি বৈশ্বিক কার্যক্রমের সময় অভূতপূর্ব দক্ষতা অর্জন করেছে।',
+            synonyms: [
+              { word: 'Unparalleled', meaningBn: 'অতুলনীয়', explanationBn: 'যার সমকক্ষ বা তুলনা আগে কখনো দেখা যায়নি।' },
+              { word: 'Extraordinary', meaningBn: 'অসাধারণ', explanationBn: 'সাধারণ মানের চেয়ে বহুগুণ উন্নত বা ব্যতিক্রমী।' },
+              { word: 'Novel', meaningBn: 'অভিনব', explanationBn: 'সম্পূর্ণ নতুন ও মৌলিক।' },
+              { word: 'Groundbreaking', meaningBn: 'যুগান্তকারী', explanationBn: 'নতুন পথ উন্মোচনকারী ও ঐতিহাসিক।' },
+              { word: 'Unmatched', meaningBn: 'অদ্বিতীয়', explanationBn: 'যার কোনো জুড়ি বা পূর্বদৃষ্টান্ত নেই।' }
+            ],
+            antonyms: [
+              { word: 'Common', meaningBn: 'সাধারণ, সচরাচর', explanationBn: 'যা প্রায়ই ঘটে এবং নতুন কিছু নয়।' },
+              { word: 'Routine', meaningBn: 'নিয়মিত ও গতানুগতিক', explanationBn: 'প্রতিদিনের সাধারণ নিয়মের অংশ।' },
+              { word: 'Familiar', meaningBn: 'পরিচিত', explanationBn: 'আগে থেকেই সবার জানা।' },
+              { word: 'Conventional', meaningBn: 'প্রথাগত', explanationBn: 'পুরোনো ও প্রচলিত নিয়ম অনুসরণকারী।' },
+              { word: 'Ordinary', meaningBn: 'মামুলি, সাধারণ', explanationBn: 'বিশেষত্বহীন ও স্বাভাবিক।' }
+            ]
+          },
+          {
+            id: 'pro-5',
+            word: 'Consensus',
+            imageQuery: 'business handshake team agreement consensus',
+            pos: 'Noun',
+            ipa: '/kənˈsensəs/',
+            meaningBn: 'সর্বসম্মত মত, ঐকমত্য',
+            explanationEn: 'General agreement among all members of a group or leadership team.',
+            example: 'Strategic initiatives succeed faster when leadership builds genuine consensus early.',
+            exampleBn: 'নেতৃত্ব পর্যায়ে শুরুতেই প্রকৃত ঐকমত্য গড়ে উঠলে কৌশলগত উদ্যোগগুলো দ্রুত সফল হয়।',
+            synonyms: [
+              { word: 'Agreement', meaningBn: 'সম্মতি, চুক্তি', explanationBn: 'একই সিদ্ধান্তে একমত হওয়া।' },
+              { word: 'Harmony', meaningBn: 'সমন্বয় ও মিল', explanationBn: 'মতের মিল ও পারস্পরিক বোঝাপড়া।' },
+              { word: 'Unanimity', meaningBn: 'সর্বসম্মতি', explanationBn: 'সকলের পূর্ণ সমর্থন।' },
+              { word: 'Accord', meaningBn: 'ঐক্য, সমঝোতা', explanationBn: 'পারস্পরিক আলোচনার মাধ্যমে পৌঁছানো সমঝোতা।' },
+              { word: 'Unity', meaningBn: 'একতা', explanationBn: 'একই লক্ষ্যে ঐক্যবদ্ধ অবস্থান।' }
+            ],
+            antonyms: [
+              { word: 'Disagreement', meaningBn: 'মতভেদ', explanationBn: 'একই বিষয়ে ভিন্ন ভিন্ন মত পোষণ করা।' },
+              { word: 'Conflict', meaningBn: 'দ্বন্দ্ব, বিরোধ', explanationBn: 'তীব্র মতবিরোধ বা সংঘাত।' },
+              { word: 'Discord', meaningBn: 'অনৈক্য', explanationBn: 'মিল বা সমঝোতার অভাব।' },
+              { word: 'Dissent', meaningBn: 'ভিন্নমত প্রকাশ', explanationBn: 'প্রচলিত বা সংখ্যাগরিষ্ঠ সিদ্ধান্তের বিরোধিতা করা।' },
+              { word: 'Division', meaningBn: 'বিভাজন', explanationBn: 'দলের মধ্যে মতের বিভক্তি।' }
+            ]
+          },
+          {
+            id: 'pro-6',
+            word: 'Exemplify',
+            imageQuery: 'golden trophy award podium excellence exemplify',
+            pos: 'Verb',
+            ipa: '/ɪɡˈzemplɪfaɪ/',
+            meaningBn: 'উদাহরণ দিয়ে স্পষ্ট করা, আদর্শ দৃষ্টান্ত স্থাপন করা',
+            explanationEn: 'To serve as a typical or ideal example of a quality or principle.',
+            example: 'Her leadership style exemplifies transparency, accountability, and calm judgment.',
+            exampleBn: 'তার নেতৃত্বের ধরন স্বচ্ছতা, জবাবদিহিতা এবং ধীরস্থির বিচারবুদ্ধির আদর্শ দৃষ্টান্ত স্থাপন করে।',
+            synonyms: [
+              { word: 'Illustrate', meaningBn: 'উদাহরণসহ ব্যাখ্যা করা', explanationBn: 'বাস্তব দৃষ্টান্ত দিয়ে কোনো বিষয় পরিষ্কার করা।' },
+              { word: 'Represent', meaningBn: 'প্রতিনিধিত্ব করা', explanationBn: 'কোনো গুণ বা আদর্শের প্রতীক হয়ে ওঠা।' },
+              { word: 'Embody', meaningBn: 'মূর্ত করে তোলা', explanationBn: 'নিজের কাজের মাধ্যমে কোনো আদর্শ বাস্তবে রূপ দেওয়া।' },
+              { word: 'Demonstrate', meaningBn: 'প্রদর্শন করা', explanationBn: 'কার্যত করে দেখানো।' },
+              { word: 'Typify', meaningBn: 'আদর্শ বৈশিষ্ট্য বহন করা', explanationBn: 'কোনো শ্রেণির মূল বৈশিষ্ট্য ফুটিয়ে তোলা।' }
+            ],
+            antonyms: [
+              { word: 'Contradict', meaningBn: 'বিরোধিতা বা খণ্ডন করা', explanationBn: 'কোনো নীতি বা বক্তব্যের বিপরীত কাজ করা।' },
+              { word: 'Misrepresent', meaningBn: 'ভুলভাবে উপস্থাপন করা', explanationBn: 'সত্য বা আদর্শকে বিকৃত করে দেখানো।' },
+              { word: 'Distort', meaningBn: 'বিকৃত করা', explanationBn: 'মূল রূপ বা অর্থ পরিবর্তন করে ফেলা।' },
+              { word: 'Obscure', meaningBn: 'আড়াল বা অস্পষ্ট করা', explanationBn: 'সত্য বা উদাহরণ ঢেকে রাখা।' },
+              { word: 'Belie', meaningBn: 'মিথ্যা প্রতিপন্ন করা', explanationBn: 'বাইরের ধারণার বিপরীত আচরণ করা।' }
+            ]
+          }
+        ],
+        practiceExtraWords: [
+          {
+            id: 'pro-7',
+            word: 'Synergy',
+            imageQuery: 'interlocking gears cogs mechanism synergy',
+            ipa: '/ˈsɪnərdʒi/',
+            meaningBn: 'সম্মিলিত শক্তি ও সমন্বয়',
+            explanationEn: 'Combined effort producing a greater result than the sum of individual parts.',
+            example: 'Cross-functional synergy accelerates innovation across global product teams.',
+            exampleBn: 'আন্তঃবিভাগীয় সম্মিলিত সমন্বয় বৈশ্বিক পণ্য দলগুলোতে উদ্ভাবনকে ত্বরান্বিত করে।'
+          },
+          {
+            id: 'pro-8',
+            word: 'Benchmark',
+            imageQuery: 'compass measuring tool blueprint benchmark',
+            ipa: '/ˈbentʃmɑːrk/',
+            meaningBn: 'মানদণ্ড, উৎকর্ষের মাপকাঠি',
+            explanationEn: 'A standard or point of reference against which things may be compared.',
+            example: 'Their customer service set a new industry benchmark for reliability.',
+            exampleBn: 'তাদের গ্রাহক সেবা নির্ভরযোগ্যতার ক্ষেত্রে শিল্পে একটি নতুন মানদণ্ড স্থাপন করেছে।'
+          }
+        ],
+        businessTemplates: [
+          { context: 'Executive Follow-Up', en: 'Thank you for your insightful feedback during today’s briefing; we will incorporate your recommendations into the revised proposal.', bn: 'আজকের ব্রিফিংয়ে আপনার অন্তর্দৃষ্টিপূর্ণ মতামতের জন্য ধন্যবাদ; আমরা সংশোধিত প্রস্তাবে আপনার সুপারিশগুলো অন্তর্ভুক্ত করব।' },
+          { context: 'Risk Mitigation Update', en: 'To mitigate potential timeline delays, we have allocated additional engineering resources to the primary milestone.', bn: 'সম্ভাব্য সময়সূচির বিলম্ব প্রশমিত করতে আমরা প্রধান মাইলফলকটিতে অতিরিক্ত প্রকৌশল সম্পদ বরাদ্দ করেছি।' },
+          { context: 'Stakeholder Alignment', en: 'Before finalizing the budget, let us ensure full consensus across all regional leads by Thursday afternoon.', bn: 'বাজেট চূড়ান্ত করার আগে চলুন বৃহস্পতিবার বিকেলের মধ্যে সব আঞ্চলিক প্রধানের পূর্ণ ঐকমত্য নিশ্চিত করি।' },
+          { context: 'Client Escalation Response', en: 'We prioritize your operational continuity and have expedited a dedicated specialist team to resolve this matter immediately.', bn: 'আমরা আপনার কার্যক্রমের ধারাবাহিকতাকে সর্বোচ্চ অগ্রাধিকার দিই এবং বিষয়টি তাৎক্ষণিকভাবে সমাধানের জন্য একটি বিশেষজ্ঞ দল নিযুক্ত করেছি।' }
+        ],
+        executiveExpressions: [
+          { expression: 'In light of empirical findings', meaningBn: 'অভিজ্ঞতালব্ধ ফলাফলের আলোকে', example: 'In light of empirical findings, the board revised its five-year sustainability roadmap.', exampleBn: 'অভিজ্ঞতালব্ধ ফলাফলের আলোকে পরিচালনা পর্ষদ তাদের পাঁচ বছরের টেকসই কর্মপরিকল্পনা সংশোধন করেছে।' },
+          { expression: 'A compelling body of evidence', meaningBn: 'জোরালো ও নির্ভরযোগ্য তথ্যপ্রমাণ', example: 'There is a compelling body of evidence linking transparent governance to long-term growth.', exampleBn: 'স্বচ্ছ সুশাসনের সাথে দীর্ঘমেয়াদী প্রবৃদ্ধির সম্পর্কের পেছনে জোরালো তথ্যপ্রমাণ রয়েছে।' },
+          { expression: 'Warrants further scrutiny', meaningBn: 'আরও গভীর পর্যালোচনার দাবি রাখে', example: 'The sudden shift in regional demand warrants further scrutiny before capital allocation.', exampleBn: 'মূলধন বরাদ্দের আগে আঞ্চলিক চাহিদার এই আকস্মিক পরিবর্তন আরও গভীর পর্যালোচনার দাবি রাখে।' },
+          { expression: 'By the same token', meaningBn: 'একই যুক্তিতে বা অনুরূপভাবে', example: 'Clear metrics drive accountability; by the same token, unrealistic targets erode morale.', exampleBn: 'স্পষ্ট মানদণ্ড জবাবদিহিতা বাড়ায়; অনুরূপভাবে অবাস্তব লক্ষ্যমাত্রা মনোবল কমিয়ে দেয়।' }
+        ],
+        complexStructures: [
+          { pattern: 'Had + Subject + Past Participle, Subject + would have...', meaningBn: 'অতীতের অবাস্তব শর্ত (Inversion)', example: 'Had the team anticipated the regulatory shift earlier, they would have mitigated the cost.', exampleBn: 'দলটি যদি আগে থেকেই নীতিগত পরিবর্তনটি আঁচ করতে পারত, তবে তারা ব্যয় কমাতে পারত।' },
+          { pattern: 'Not only + Aux + Subject + Verb, but + Subject + also...', meaningBn: 'নেতিবাচক ক্রিয়া-বিশেষণ দিয়ে বাক্য শুরু', example: 'Not only did the strategy expedite delivery, but it also elevated client satisfaction.', exampleBn: 'কৌশলটি শুধু সরবরাহই ত্বরান্বিত করেনি, বরং এটি গ্রাহক সন্তুষ্টিও বাড়িয়েছে।' },
+          { pattern: 'Given that + Clause, Main Clause', meaningBn: 'যেহেতু বা বিবেচনা করে যে...', example: 'Given that market conditions remain volatile, prudent capital reserve is essential.', exampleBn: 'যেহেতু বাজার পরিস্থিতি অস্থির রয়েছে, তাই বিচক্ষণ মূলধন সংরক্ষণ অপরিহার্য।' },
+          { pattern: 'Notwithstanding + Noun Phrase, Main Clause', meaningBn: 'সত্ত্বেও (অত্যন্ত আনুষ্ঠানিক প্রয়োগ)', example: 'Notwithstanding initial supply constraints, the division delivered unprecedented quarterly results.', exampleBn: 'প্রাথমিক সরবরাহ সীমাবদ্ধতা সত্ত্বেও বিভাগটি অভূতপূর্ব ত্রৈমাসিক ফলাফল অর্জন করেছে।' }
+        ],
+        stories: [
+          {
+            title: 'Executive Case 1: Navigating Strategic Transformation (কৌশলগত রূপান্তর পরিচালনা)',
+            sentences: [
+              { en: 'When a legacy logistics enterprise faced unprecedented competition, its leadership refused to react impulsively.', bn: 'যখন একটি ঐতিহ্যবাহী লজিস্টিক প্রতিষ্ঠান নজিরবিহীন প্রতিযোগিতার মুখোমুখি হলো, তখন এর নেতৃত্ব আবেগতাড়িত প্রতিক্রিয়া দেখাতে অস্বীকৃতি জানাল।' },
+              { en: 'Instead, an astute task force scrutinized operational bottlenecks across forty regional hubs.', bn: 'পরিবর্তে, একটি বিচক্ষণ টাস্ক ফোর্স চল্লিশটি আঞ্চলিক কেন্দ্রের পরিচালনগত প্রতিবন্ধকতাগুলো খুঁটিয়ে পরীক্ষা করল।' },
+              { en: 'By building consensus among engineers and field managers, they expedited digital route optimization.', bn: 'প্রকৌশলী এবং মাঠ পর্যায়ের ব্যবস্থাপকদের মধ্যে ঐকমত্য গড়ে তুলে তারা ডিজিটাল রুট অপ্টিমাইজেশন ত্বরান্বিত করল।' },
+              { en: 'Within two quarters, transit delays dropped by half, exemplifying disciplined executive execution.', bn: 'দুই প্রান্তিকের মধ্যেই পরিবহন বিলম্ব অর্ধেকে নেমে আসে, যা সুশৃঙ্খল নির্বাহী বাস্তবায়নের আদর্শ দৃষ্টান্ত স্থাপন করে।' }
+            ]
+          },
+          {
+            title: 'Executive Case 2: Ethics in Algorithmic Governance (অ্যালগরিদমিক সুশাসনে নৈতিকতা)',
+            sentences: [
+              { en: 'Modern financial institutions rely heavily on predictive models to allocate credit and assess risk.', bn: 'আধুনিক আর্থিক প্রতিষ্ঠানগুলো ঋণ বরাদ্দ এবং ঝুঁকি মূল্যায়নের জন্য ভবিষ্যদ্বাণীমূলক মডেলের ওপর ব্যাপকভাবে নির্ভর করে।' },
+              { en: 'However, unexamined datasets can inadvertently perpetuate historical bias unless audited rigorously.', bn: 'তবে কঠোরভাবে নিরীক্ষা না করা হলে অপরীক্ষিত ডেটাসেটগুলো অজান্তেই ঐতিহাসিক পক্ষপাত বজায় রাখতে পারে।' },
+              { en: 'Forward-looking boards now mandate transparent fairness benchmarks to mitigate reputational and legal exposure.', bn: 'দূরদর্শী পরিচালনা পর্ষদ এখন সুনাম ও আইনি ঝুঁকি প্রশমিত করতে স্বচ্ছ ন্যায্যতার মানদণ্ড বাধ্যতামূলক করছে।' },
+              { en: 'Ultimately, technological speed creates lasting value only when anchored in human accountability.', bn: 'পরিশেষে, প্রযুক্তিগত গতি কেবল তখনই দীর্ঘস্থায়ী মূল্য তৈরি করে যখন তা মানবিক জবাবদিহিতার ওপর প্রতিষ্ঠিত থাকে।' }
+            ]
+          }
+        ]
+      }
+    };

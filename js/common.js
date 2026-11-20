@@ -1,0 +1,1839 @@
+/* =====================================================================
+   VOCABULARY WORLD — SHARED CORE SYSTEM (js/common.js)
+   - State & LocalStorage Management
+   - Hybrid English TTS Pronunciation Engine
+   - Safe Text Registry & SVG Helpers
+   - Shared Navigation Bar & Footer
+====================================================================== */
+
+/* =====================================================================
+   DARK / LIGHT THEME ZERO-FLASH INITIALIZER
+====================================================================== */
+(function () {
+  if (typeof window === 'undefined' || !document.documentElement) return;
+  try {
+    const theme = localStorage.getItem('vw_theme');
+    if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  } catch (e) {}
+})();
+
+/* =====================================================================
+   0. LEVEL SELECTION ROUTE PROTECTION & SESSION GATEWAY
+====================================================================== */
+const LEVEL_CHOSEN_STORAGE_KEY = 'vw_level_chosen';
+
+function isLevelChosen() {
+  try {
+    return sessionStorage.getItem(LEVEL_CHOSEN_STORAGE_KEY) === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+function enforceLevelSelectionRoute() {
+  if (typeof window === 'undefined') return;
+  const path = (window.location.pathname || '').toLowerCase();
+  const file = path.split('/').pop().split('\\').pop() || '';
+  const isIndex = file === '' || file === 'index.html';
+
+  if (!isLevelChosen() && !isIndex) {
+    window.location.replace('index.html');
+  }
+}
+
+// Enforce route protection immediately on script evaluation
+enforceLevelSelectionRoute();
+
+/* =====================================================================
+   1. SAFE TEXT REGISTRY & SVG HELPERS
+====================================================================== */
+const SpeakTextRegistry = [];
+
+function registerSpeakText(text) {
+  const clean = String(text || '').trim();
+  const existingIndex = SpeakTextRegistry.indexOf(clean);
+  if (existingIndex !== -1) return existingIndex;
+  SpeakTextRegistry.push(clean);
+  return SpeakTextRegistry.length - 1;
+}
+
+function speakById(id, btnEl) {
+  const text = SpeakTextRegistry[id];
+  if (text) {
+    speakEnglish(text, btnEl);
+  }
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function speakerIconSvg(sizeClass = 'w-4 h-4') {
+  return `
+    <svg class="${sizeClass}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path d="M10 3.5a.75.75 0 00-1.28-.53l-3.97 3.97H2.75A1.75 1.75 0 001 8.69v2.62c0 .966.784 1.75 1.75 1.75h2l3.97 3.97a.75.75 0 001.28-.53V3.5zM14.28 6.22a.75.75 0 011.06 0 5.5 5.5 0 010 7.56.75.75 0 11-1.06-1.06 4 4 0 000-5.44.75.75 0 010-1.06z"/>
+      <path d="M16.5 4a.75.75 0 011.06 0 8.5 8.5 0 010 12a.75.75 0 01-1.06-1.06 7 7 0 000-9.88.75.75 0 010-1.06z"/>
+    </svg>
+  `;
+}
+
+function soundWaveSvg() {
+  return `
+    <div class="vw-wave-bars" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  `;
+}
+
+/* =====================================================================
+   COUNTRY ACCENT CONFIGURATION & SPEECH SYNCHRONIZATION
+====================================================================== */
+const COUNTRY_CONFIG = {
+  UK: { id: 'UK', name: 'United Kingdom', flag: '🇬🇧', lang: 'en-GB', accentLabel: 'British (en-GB)' },
+  US: { id: 'US', name: 'United States', flag: '🇺🇸', lang: 'en-US', accentLabel: 'American (en-US)' },
+  AU: { id: 'AU', name: 'Australia', flag: '🇦🇺', lang: 'en-AU', accentLabel: 'Australian (en-AU)' },
+  CA: { id: 'CA', name: 'Canada', flag: '🇨🇦', lang: 'en-CA', accentLabel: 'Canadian (en-CA)' },
+  BD: { id: 'BD', name: 'Bangladesh', flag: '🇧🇩', lang: 'en-US', accentLabel: 'Bangla Support (en-US)' }
+};
+
+function getSelectedCountry() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem('vw_country');
+  } catch (e) {}
+  return (saved && COUNTRY_CONFIG[saved]) || COUNTRY_CONFIG.US;
+}
+
+/* =====================================================================
+   2. HYBRID ENGLISH PRONUNCIATION AUDIO SYSTEM
+   - Tier 1: HTML5 SpeechSynthesis (Matched to Selected Country Accent)
+   - Tier 2: Free Dictionary API Studio MP3 Fallback
+   - Tier 3: High-Quality Google TTS Accent Fallback
+====================================================================== */
+const PronunciationEngine = {
+  activeBtn: null,
+  activeAudio: null,
+  fallbackTimer: null,
+  toastTimer: null,
+  voices: [],
+
+  init() {
+    if ('speechSynthesis' in window) {
+      const loadVoices = () => {
+        this.voices = window.speechSynthesis.getVoices() || [];
+      };
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  },
+
+  getSelectedCountry() {
+    return getSelectedCountry();
+  },
+
+  pickEnglishVoice(targetLang) {
+    if (!this.voices.length && 'speechSynthesis' in window) {
+      this.voices = window.speechSynthesis.getVoices() || [];
+    }
+    const country = this.getSelectedCountry();
+    const desiredLang = (targetLang || country.lang || 'en-US').toLowerCase();
+
+    // 1. Exact match e.g. en-gb or en-us
+    let match = this.voices.find(
+      (v) => v.lang && v.lang.replace('_', '-').toLowerCase() === desiredLang
+    );
+    // 2. Starts with desired dialect e.g. en-gb
+    if (!match) {
+      match = this.voices.find(
+        (v) => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith(desiredLang)
+      );
+    }
+    // 3. Fallback to any English voice
+    if (!match) {
+      const base = desiredLang.split('-')[0];
+      match = this.voices.find(
+        (v) => v.lang && v.lang.toLowerCase().startsWith(base)
+      );
+    }
+    return match || null;
+  },
+
+  resetButton(btn) {
+    if (!btn) return;
+    btn.classList.remove('is-speaking');
+    if (btn.dataset.origHtml) {
+      btn.innerHTML = btn.dataset.origHtml;
+    }
+  },
+
+  stopAll() {
+    if (this.fallbackTimer) {
+      clearTimeout(this.fallbackTimer);
+      this.fallbackTimer = null;
+    }
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+    if (this.activeAudio) {
+      try {
+        this.activeAudio.pause();
+        this.activeAudio.src = '';
+      } catch (e) {}
+      this.activeAudio = null;
+    }
+    if (this.activeBtn) {
+      this.resetButton(this.activeBtn);
+      this.activeBtn = null;
+    }
+  },
+
+  activateButton(btnEl, showTextLabel) {
+    if (!btnEl) return;
+    if (!btnEl.dataset.origHtml) {
+      btnEl.dataset.origHtml = btnEl.innerHTML;
+    }
+    this.activeBtn = btnEl;
+    btnEl.classList.add('is-speaking');
+    btnEl.innerHTML = showTextLabel
+      ? `${soundWaveSvg()} <span>Playing...</span>`
+      : soundWaveSvg();
+  },
+
+  async playFallbackAudio(text, btnEl) {
+    const isSingleWord = !text.includes(' ');
+    if (isSingleWord) {
+      try {
+        const cleanWord = text.toLowerCase().replace(/[^a-z-]/g, '');
+        if (cleanWord) {
+          const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
+          if (res.ok) {
+            const data = await res.json();
+            const phonetics = (data && data[0] && data[0].phonetics) || [];
+            const audioEntry = phonetics.find((p) => p.audio && p.audio.length > 0);
+            if (audioEntry && this.activeBtn === btnEl) {
+              const dictAudio = new Audio(audioEntry.audio);
+              this.activeAudio = dictAudio;
+              dictAudio.onended = () => {
+                if (this.activeBtn === btnEl) this.stopAll();
+              };
+              dictAudio.onerror = () => {
+                if (this.activeBtn === btnEl) this.playGoogleTts(text, btnEl);
+              };
+              await dictAudio.play();
+              return;
+            }
+          }
+        }
+      } catch (err) {}
+    }
+
+    if (this.activeBtn === btnEl) {
+      this.playGoogleTts(text, btnEl);
+    }
+  },
+
+  playGoogleTts(text, btnEl) {
+    const country = this.getSelectedCountry();
+    const encoded = encodeURIComponent(text.slice(0, 220));
+    const tl = (country.lang || 'en-US').toLowerCase();
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(tl)}&q=${encoded}`;
+    const audio = new Audio(url);
+    this.activeAudio = audio;
+
+    audio.onended = () => {
+      if (this.activeBtn === btnEl) this.stopAll();
+    };
+
+    audio.onerror = () => {
+      if (this.activeBtn === btnEl) {
+        this.stopAll();
+        showToast('দুঃখিত, এই মুহূর্তে উচ্চারণ অডিও চালু করা যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করুন।');
+      }
+    };
+
+    audio.play().catch(() => {
+      if (this.activeBtn === btnEl) {
+        this.stopAll();
+      }
+    });
+  }
+};
+
+function speakEnglish(text, btnEl) {
+  const cleanText = String(text || '').trim();
+  if (!cleanText) return;
+
+  if (btnEl && PronunciationEngine.activeBtn === btnEl) {
+    PronunciationEngine.stopAll();
+    return;
+  }
+
+  PronunciationEngine.stopAll();
+  const hasLabel = btnEl && btnEl.textContent && btnEl.textContent.trim().length > 0;
+  PronunciationEngine.activateButton(btnEl, hasLabel);
+
+  const isSentence = cleanText.split(/\s+/).length > 2;
+  let started = false;
+
+  if ('speechSynthesis' in window) {
+    try {
+      const country = PronunciationEngine.getSelectedCountry();
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const voice = PronunciationEngine.pickEnglishVoice(country.lang);
+      if (voice) utterance.voice = voice;
+      utterance.lang = country.lang || 'en-US';
+      utterance.rate = isSentence ? 0.92 : 0.95;
+
+      utterance.onstart = () => {
+        started = true;
+        if (PronunciationEngine.fallbackTimer) {
+          clearTimeout(PronunciationEngine.fallbackTimer);
+          PronunciationEngine.fallbackTimer = null;
+        }
+      };
+
+      utterance.onend = () => {
+        if (PronunciationEngine.activeBtn === btnEl) {
+          PronunciationEngine.stopAll();
+        }
+      };
+
+      utterance.onerror = () => {
+        if (!started && PronunciationEngine.activeBtn === btnEl) {
+          PronunciationEngine.playFallbackAudio(cleanText, btnEl);
+        }
+      };
+
+      window.speechSynthesis.speak(utterance);
+
+      PronunciationEngine.fallbackTimer = setTimeout(() => {
+        if (!started && PronunciationEngine.activeBtn === btnEl) {
+          try {
+            window.speechSynthesis.cancel();
+          } catch (e) {}
+          PronunciationEngine.playFallbackAudio(cleanText, btnEl);
+        }
+      }, 650);
+      return;
+    } catch (err) {}
+  }
+
+  PronunciationEngine.playFallbackAudio(cleanText, btnEl);
+}
+
+// Global alias for speakEnglish
+window.speakWord = speakEnglish;
+
+function showToast(msg) {
+  const toast = document.getElementById('vw-toast');
+  const textEl = document.getElementById('vw-toast-text');
+  if (!toast || !textEl) return;
+  textEl.textContent = msg;
+  toast.classList.remove('hidden');
+  toast.classList.add('flex');
+  if (PronunciationEngine.toastTimer) clearTimeout(PronunciationEngine.toastTimer);
+  PronunciationEngine.toastTimer = setTimeout(hideToast, 4000);
+}
+
+function hideToast() {
+  const toast = document.getElementById('vw-toast');
+  if (!toast) return;
+  toast.classList.add('hidden');
+  toast.classList.remove('flex');
+}
+
+/* =====================================================================
+   3. APPLICATION STATE & LOCALSTORAGE PERSISTENCE
+====================================================================== */
+const STORAGE_KEYS = {
+  SETUP: 'vw_user_setup_v1',
+  TRACKER: 'vw_daily_tracker_v1',
+  WORD_IMAGES: 'vw_word_images_v1',
+  CUSTOM_WORDS: 'vw_custom_words_v1'
+};
+
+/* ---------------------------------------------------------------------
+   CUSTOM WORDS PERSISTENCE & CURRICULUM SYNC
+---------------------------------------------------------------------- */
+function getCustomWords() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_WORDS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveCustomWords(wordsArray) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_WORDS, JSON.stringify(wordsArray || []));
+  } catch (e) {}
+  syncCustomWordsIntoCurriculum();
+}
+
+function syncCustomWordsIntoCurriculum() {
+  if (typeof CURRICULUM_DATA === 'undefined') return;
+  const customWords = getCustomWords();
+
+  // 1. Remove previously synced custom words from curriculum levels to prevent duplicates
+  Object.keys(CURRICULUM_DATA).forEach((lvlKey) => {
+    const lvl = CURRICULUM_DATA[lvlKey];
+    if (lvl && Array.isArray(lvl.words)) {
+      lvl.words = lvl.words.filter((w) => !w.isCustom);
+    }
+  });
+
+  // 2. Inject current custom words into their assigned curriculum levels
+  customWords.forEach((wordObj) => {
+    const targetLvl = (wordObj.level && CURRICULUM_DATA[wordObj.level]) ? wordObj.level : 'beginner';
+    if (CURRICULUM_DATA[targetLvl] && Array.isArray(CURRICULUM_DATA[targetLvl].words)) {
+      CURRICULUM_DATA[targetLvl].words.push(wordObj);
+    }
+  });
+}
+
+function formatWordEntry(rawWord, targetLevel = 'beginner') {
+  const cleanWord = String((rawWord && rawWord.word) || '').trim();
+  if (!cleanWord) return null;
+
+  // Format capitalized word
+  const formattedWord = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
+  const wordId = rawWord.id || `cw-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+  const level = (rawWord.level && ['beginner', 'intermediate', 'advanced', 'pro'].includes(String(rawWord.level).toLowerCase()))
+    ? String(rawWord.level).toLowerCase()
+    : targetLevel;
+
+  return {
+    id: wordId,
+    word: formattedWord,
+    level: level,
+    pos: String(rawWord.pos || 'Word').trim(),
+    ipa: String(rawWord.ipa || '').trim(),
+    meaningBn: String(rawWord.meaningBn || 'অর্থ যোগ করা হয়নি').trim(),
+    explanationEn: String(rawWord.explanationEn || `Definition and contextual usage of "${formattedWord}".`).trim(),
+    example: String(rawWord.example || `The student practiced using "${formattedWord}" in sentences.`).trim(),
+    exampleBn: String(rawWord.exampleBn || `শিক্ষার্থীটি বাক্যে "${formattedWord}" শব্দটি ব্যবহারের অনুশীলন করেছে।`).trim(),
+    imageQuery: String(rawWord.imageQuery || formattedWord).trim(),
+    synonyms: Array.isArray(rawWord.synonyms) ? rawWord.synonyms : [],
+    antonyms: Array.isArray(rawWord.antonyms) ? rawWord.antonyms : [],
+    isCustom: true,
+    addedAt: rawWord.addedAt || new Date().toISOString()
+  };
+}
+
+function addCustomWord(wordObj) {
+  const formatted = formatWordEntry(wordObj);
+  if (!formatted) return null;
+
+  const currentCustom = getCustomWords();
+  const existingIdx = currentCustom.findIndex((w) => w.word.toLowerCase() === formatted.word.toLowerCase());
+  if (existingIdx !== -1) {
+    currentCustom[existingIdx] = { ...currentCustom[existingIdx], ...formatted, id: currentCustom[existingIdx].id };
+  } else {
+    currentCustom.push(formatted);
+  }
+
+  saveCustomWords(currentCustom);
+  return formatted;
+}
+
+function addCustomWordsBulk(wordsArray, defaultLevel = 'beginner') {
+  if (!Array.isArray(wordsArray) || wordsArray.length === 0) return 0;
+  const currentCustom = getCustomWords();
+  let addedCount = 0;
+
+  wordsArray.forEach((raw) => {
+    const formatted = formatWordEntry(raw, defaultLevel);
+    if (!formatted) return;
+
+    const existingIdx = currentCustom.findIndex((w) => w.word.toLowerCase() === formatted.word.toLowerCase());
+    if (existingIdx !== -1) {
+      currentCustom[existingIdx] = { ...currentCustom[existingIdx], ...formatted, id: currentCustom[existingIdx].id };
+    } else {
+      currentCustom.push(formatted);
+      addedCount++;
+    }
+  });
+
+  saveCustomWords(currentCustom);
+  return addedCount;
+}
+
+function deleteCustomWord(wordId) {
+  const currentCustom = getCustomWords();
+  const filtered = currentCustom.filter((w) => w.id !== wordId);
+  saveCustomWords(filtered);
+}
+
+function clearAllCustomWords() {
+  saveCustomWords([]);
+}
+
+function isWordDuplicate(wordText) {
+  if (!wordText || typeof CURRICULUM_DATA === 'undefined') return false;
+  const clean = String(wordText).trim().toLowerCase();
+  for (const lvlKey of Object.keys(CURRICULUM_DATA)) {
+    const lvl = CURRICULUM_DATA[lvlKey];
+    if (lvl && Array.isArray(lvl.words)) {
+      if (lvl.words.some((w) => w.word.toLowerCase() === clean)) return true;
+    }
+  }
+  return false;
+}
+
+function getTodayDateKey() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function formatDisplayDate() {
+  try {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return getTodayDateKey();
+  }
+}
+
+const AppState = {
+  selectedLevel: 'beginner', // 'beginner' | 'intermediate' | 'advanced' | 'pro'
+  assessmentIndex: null, // 1 | 2 | 3 | 4
+  tracker: {
+    dateKey: getTodayDateKey(),
+    exploredWordIds: [],
+    flashcardsCompleted: 0,
+    gameScore: 0,
+    quizAnswered: 0
+  }
+};
+
+function loadPersistedState() {
+  try {
+    const rawSetup = localStorage.getItem(STORAGE_KEYS.SETUP);
+    if (rawSetup) {
+      const parsed = JSON.parse(rawSetup);
+      if (parsed && parsed.level && (typeof CURRICULUM_DATA === 'undefined' || CURRICULUM_DATA[parsed.level])) {
+        AppState.selectedLevel = parsed.level;
+      }
+      if (parsed && typeof parsed.assessmentIndex === 'number') {
+        AppState.assessmentIndex = parsed.assessmentIndex;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    const todayKey = getTodayDateKey();
+    const rawTracker = localStorage.getItem(STORAGE_KEYS.TRACKER);
+    if (rawTracker) {
+      const parsedTracker = JSON.parse(rawTracker);
+      if (parsedTracker && parsedTracker.dateKey === todayKey) {
+        AppState.tracker = {
+          dateKey: todayKey,
+          exploredWordIds: Array.isArray(parsedTracker.exploredWordIds) ? parsedTracker.exploredWordIds : [],
+          flashcardsCompleted: Number(parsedTracker.flashcardsCompleted) || 0,
+          gameScore: Number(parsedTracker.gameScore) || 0,
+          quizAnswered: Number(parsedTracker.quizAnswered) || 0
+        };
+      }
+    }
+  } catch (e) {}
+
+  // Synchronize any stored custom words into CURRICULUM_DATA across all levels
+  try {
+    syncCustomWordsIntoCurriculum();
+  } catch (e) {}
+}
+
+function saveSetupToStorage(levelId, assessmentIdx) {
+  if (levelId) AppState.selectedLevel = levelId;
+  if (assessmentIdx !== undefined && assessmentIdx !== null) AppState.assessmentIndex = assessmentIdx;
+  
+  let optText = '';
+  if (typeof ASSESSMENT_OPTIONS !== 'undefined') {
+    const opt = ASSESSMENT_OPTIONS.find((o) => o.id === AppState.assessmentIndex);
+    if (opt) optText = opt.text;
+  }
+
+  try {
+    localStorage.setItem(
+      STORAGE_KEYS.SETUP,
+      JSON.stringify({
+        level: AppState.selectedLevel,
+        assessmentIndex: AppState.assessmentIndex,
+        assessmentText: optText
+      })
+    );
+  } catch (e) {}
+}
+
+function saveTrackerToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.TRACKER, JSON.stringify(AppState.tracker));
+  } catch (e) {}
+}
+
+function trackWordExplored(wordId) {
+  if (!wordId) return;
+  if (!AppState.tracker.exploredWordIds.includes(wordId)) {
+    AppState.tracker.exploredWordIds.push(wordId);
+    saveTrackerToStorage();
+    updateTrackerDisplay();
+    if (typeof updateLevelProgressBar === 'function') {
+      try { updateLevelProgressBar(); } catch (e) {}
+    }
+  }
+}
+
+function awardGamePoints(points, isQuiz = false) {
+  AppState.tracker.gameScore += points;
+  if (isQuiz) {
+    AppState.tracker.quizAnswered += 1;
+  }
+  saveTrackerToStorage();
+  updateTrackerDisplay();
+}
+
+function updateTrackerDisplay() {
+  const exploredEl = document.getElementById('tracker-words-explored');
+  const fcEl = document.getElementById('tracker-flashcards-done');
+  const scoreEl = document.getElementById('tracker-game-score');
+  const quizEl = document.getElementById('tracker-quiz-answered');
+
+  if (exploredEl) exploredEl.textContent = AppState.tracker.exploredWordIds.length;
+  if (fcEl) fcEl.textContent = AppState.tracker.flashcardsCompleted;
+  if (scoreEl) scoreEl.textContent = AppState.tracker.gameScore;
+  if (quizEl) quizEl.textContent = AppState.tracker.quizAnswered;
+}
+
+function shuffleArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function getLevelPracticeDeck(levelId) {
+  if (typeof CURRICULUM_DATA === 'undefined') return [];
+  const lvl = CURRICULUM_DATA[levelId || AppState.selectedLevel || 'beginner'];
+  if (!lvl) return [];
+  return [...lvl.words, ...(lvl.practiceExtraWords || [])];
+}
+
+/* =====================================================================
+   4. SHARED EDITORIAL TOP NAVIGATION & FOOTER (LANGEEK-INSPIRED)
+====================================================================== */
+const TOP_NAV_LEFT_KEY = 'vw_topnav_last_left_v1';
+const TOP_NAV_WIDTH_KEY = 'vw_topnav_last_width_v1';
+const TOP_NAV_PAGE_KEY = 'vw_topnav_last_page_v1';
+
+function toggleTopLevelPicker() {
+  const picker = document.getElementById('top-level-picker');
+  if (picker) picker.classList.toggle('hidden');
+}
+
+function selectTopLevel(newLevel) {
+  const picker = document.getElementById('top-level-picker');
+  if (picker) picker.classList.add('hidden');
+  try {
+    sessionStorage.setItem(LEVEL_CHOSEN_STORAGE_KEY, 'true');
+  } catch (e) {}
+
+  if (typeof switchLevel === 'function') {
+    switchLevel(newLevel);
+    const activeId = window.location.pathname.split('/').pop().replace('.html', '') || 'home';
+    renderAppHeader(activeId);
+  } else {
+    AppState.selectedLevel = newLevel;
+    saveSetupToStorage(newLevel, AppState.assessmentIndex);
+    window.location.href = `learn.html?level=${encodeURIComponent(newLevel)}`;
+  }
+}
+
+function toggleMobileNavMenu() {
+  const menu = document.getElementById('vw-mobile-nav-menu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+/* =====================================================================
+   THEME TOGGLE, COUNTRY SELECTOR & AUTH SYSTEM FUNCTIONS
+====================================================================== */
+function getMoonIconSvg() {
+  return `<svg class="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ink-primary);"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+}
+
+function getSunIconSvg() {
+  return `<svg class="w-4 h-4 shrink-0 transition-transform group-hover:scale-110 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`;
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+
+  if (newTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+
+  try {
+    localStorage.setItem('vw_theme', newTheme);
+  } catch (e) {}
+
+  const btns = document.querySelectorAll('.vw-theme-toggle-btn');
+  btns.forEach((btn) => {
+    btn.classList.add('rotating');
+    btn.title = newTheme === 'dark' ? 'Switch to Light Mode • লাইট মোড' : 'Switch to Dark Mode • ডার্ক মোড';
+    const iconSpan = btn.querySelector('.vw-theme-toggle-icon');
+    if (iconSpan) {
+      iconSpan.innerHTML = newTheme === 'dark' ? getSunIconSvg() : getMoonIconSvg();
+    }
+    setTimeout(() => {
+      btn.classList.remove('rotating');
+    }, 400);
+  });
+}
+
+function toggleCountryPicker() {
+  const picker = document.getElementById('vw-country-picker');
+  if (picker) picker.classList.toggle('hidden');
+}
+
+function selectCountry(countryId) {
+  if (!COUNTRY_CONFIG[countryId]) return;
+  try {
+    localStorage.setItem('vw_country', countryId);
+  } catch (e) {}
+
+  const picker = document.getElementById('vw-country-picker');
+  if (picker) picker.classList.add('hidden');
+
+  const country = COUNTRY_CONFIG[countryId];
+  const activePage = window.location.pathname.split('/').pop().replace('.html', '') || 'home';
+  renderAppHeader(activePage);
+
+  if (typeof showToast === 'function') {
+    showToast(`উচ্চারণ অ্যাকসেন্ট পরিবর্তিত হয়েছে: ${country.name} (${country.lang})`);
+  }
+}
+
+function getStoredUserProfile() {
+  try {
+    const raw = localStorage.getItem('vw_user_profile');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function openAuthModal() {
+  const modal = document.getElementById('vw-auth-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    const nameInput = document.getElementById('auth-name-input');
+    if (nameInput) setTimeout(() => nameInput.focus(), 80);
+  }
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('vw-auth-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleAuthSubmit(event) {
+  if (event) event.preventDefault();
+  const nameInput = document.getElementById('auth-name-input');
+  const emailInput = document.getElementById('auth-email-input');
+  const name = nameInput ? nameInput.value.trim() : '';
+  const email = emailInput ? emailInput.value.trim() : '';
+
+  if (!name) {
+    if (typeof showToast === 'function') showToast('দয়া করে আপনার পূর্ণ নাম লিখুন');
+    return;
+  }
+
+  const userProfile = {
+    name: name,
+    email: email || `${name.toLowerCase().replace(/\s+/g, '')}@learner.vocabularyworld.com`,
+    initial: name.charAt(0).toUpperCase(),
+    signedInAt: Date.now()
+  };
+
+  try {
+    localStorage.setItem('vw_user_profile', JSON.stringify(userProfile));
+  } catch (e) {}
+
+  closeAuthModal();
+
+  const activePage = window.location.pathname.split('/').pop().replace('.html', '') || 'home';
+  renderAppHeader(activePage);
+
+  if (typeof showToast === 'function') {
+    showToast(`স্বাগতম, ${name}! সফলভাবে সাইন ইন হয়েছে।`);
+  }
+}
+
+function handleGuestAuth() {
+  const guestUser = {
+    name: 'Guest Learner',
+    email: 'guest@vocabularyworld.com',
+    initial: 'G',
+    signedInAt: Date.now()
+  };
+  try {
+    localStorage.setItem('vw_user_profile', JSON.stringify(guestUser));
+  } catch (e) {}
+  closeAuthModal();
+  const activePage = window.location.pathname.split('/').pop().replace('.html', '') || 'home';
+  renderAppHeader(activePage);
+  if (typeof showToast === 'function') {
+    showToast('অতিথি শিক্ষার্থী হিসেবে সাইন ইন সম্পন্ন হয়েছে!');
+  }
+}
+
+function toggleUserMenu() {
+  const dropdown = document.getElementById('vw-user-menu-dropdown');
+  if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function handleSignOut() {
+  try {
+    localStorage.removeItem('vw_user_profile');
+  } catch (e) {}
+  const dropdown = document.getElementById('vw-user-menu-dropdown');
+  if (dropdown) dropdown.classList.add('hidden');
+  const activePage = window.location.pathname.split('/').pop().replace('.html', '') || 'home';
+  renderAppHeader(activePage);
+  if (typeof showToast === 'function') {
+    showToast('সফলভাবে সাইন আউট করা হয়েছে।');
+  }
+}
+
+// Global click listener to close popups when clicking outside
+document.addEventListener('click', (e) => {
+  // 1. Close Level Picker
+  const levelPicker = document.getElementById('top-level-picker');
+  const levelBtn = document.getElementById('top-level-btn');
+  if (levelPicker && !levelPicker.classList.contains('hidden')) {
+    if (levelBtn && !levelBtn.contains(e.target) && !levelPicker.contains(e.target)) {
+      levelPicker.classList.add('hidden');
+    }
+  }
+
+  // 2. Close Country Picker
+  const countryPicker = document.getElementById('vw-country-picker');
+  const countryBtn = document.getElementById('vw-country-btn');
+  if (countryPicker && !countryPicker.classList.contains('hidden')) {
+    if (countryBtn && !countryBtn.contains(e.target) && !countryPicker.contains(e.target)) {
+      countryPicker.classList.add('hidden');
+    }
+  }
+
+  // 3. Close User Menu Dropdown
+  const userDropdown = document.getElementById('vw-user-menu-dropdown');
+  const userBtn = document.getElementById('vw-user-menu-btn');
+  if (userDropdown && !userDropdown.classList.contains('hidden')) {
+    if (userBtn && !userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+      userDropdown.classList.add('hidden');
+    }
+  }
+});
+
+function renderAppHeader(activePage = 'home') {
+  const headerContainer = document.getElementById('app-header');
+  if (!headerContainer) return;
+
+  const path = (window.location.pathname || '').toLowerCase();
+  const file = path.split('/').pop().split('\\').pop() || '';
+  const isIndex = file === '' || file === 'index.html';
+
+  // Locked Entry View: If on index.html and level has NOT been chosen in the current session,
+  // completely hide the top navigation bar and all feature links
+  if (isIndex && !isLevelChosen()) {
+    headerContainer.innerHTML = '';
+    headerContainer.classList.add('hidden');
+    return;
+  }
+
+  headerContainer.classList.remove('hidden');
+
+  const currentLevelId = AppState.selectedLevel || 'beginner';
+  let levelTitle = 'Beginner';
+  let levelSubtitle = 'প্রাথমিক স্তর';
+  let levelBadgeClass = 'badge-beginner';
+
+  if (typeof LEVEL_META !== 'undefined') {
+    const meta = LEVEL_META.find((m) => m.id === currentLevelId);
+    if (meta) {
+      levelTitle = meta.title;
+      levelSubtitle = meta.bengaliSubtitle;
+      levelBadgeClass = `badge-${meta.id}`;
+    }
+  }
+
+  const navLinks = [
+    {
+      id: 'home',
+      label: 'Levels',
+      href: 'index.html',
+      icon: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`
+    },
+    {
+      id: 'learn',
+      label: 'Learn',
+      href: 'learn.html',
+      icon: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`
+    },
+    {
+      id: 'flashcards',
+      label: '3D Flashcards',
+      href: 'flashcards.html',
+      icon: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="14" rx="2"/><path d="M6 3h12a2 2 0 0 1 2 2v12"/></svg>`
+    },
+    {
+      id: 'games',
+      label: 'Games',
+      href: 'games.html',
+      icon: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4m-2-2v4m7-2h.01m3 0h.01"/></svg>`
+    },
+    {
+      id: 'tracker',
+      label: 'Tracker',
+      href: 'tracker.html',
+      icon: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>`
+    },
+    {
+      id: 'add-words',
+      label: '+ Add Words',
+      href: 'add-words.html',
+      icon: `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8m-4-4h8"/></svg>`
+    }
+  ];
+
+  const selectedCountry = getSelectedCountry();
+  const userProfile = getStoredUserProfile();
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+
+  headerContainer.innerHTML = `
+    <header
+      id="vw-top-header"
+      class="sticky top-0 z-40 w-full border-b backdrop-blur-md"
+      style="background-color: rgba(250, 248, 245, 0.95); border-color: var(--border-subtle);"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <!-- 1. LEFT: Brand Logo & Title -->
+        <a href="index.html" class="flex items-center gap-2.5 shrink-0 group focus:outline-none" title="Vocabulary World Home">
+          <div
+            class="w-9 h-9 rounded-xl flex items-center justify-center font-editorial font-bold text-lg text-white shadow-xs shrink-0 transition-transform group-hover:scale-105"
+            style="background-color: var(--accent-sage);"
+          >
+            V
+          </div>
+          <div class="hidden sm:block">
+            <span class="font-editorial text-lg font-bold block leading-none" style="color: var(--ink-primary);">
+              Vocabulary World
+            </span>
+            <span class="font-bengali text-[10px] block mt-0.5" style="color: var(--ink-muted);">
+              বাংলা-ইংরেজি শব্দভান্ডার
+            </span>
+          </div>
+        </a>
+
+        <!-- 2. CENTER: LanGeek-Inspired Horizontal Sliding Pill Navigation (Desktop: >= md) -->
+        <nav
+          id="vw-top-nav"
+          class="vw-top-nav relative hidden md:inline-flex items-center"
+          aria-label="Main navigation"
+        >
+          <!-- Floating Background Horizontal Sliding Pill -->
+          <div id="vw-top-sliding-pill" class="vw-top-sliding-pill" aria-hidden="true"></div>
+
+          <!-- 6 Single-Line Horizontal Menu Items (Icon + English Title Only) -->
+          ${navLinks
+            .map((item) => {
+              const isActive = activePage === item.id;
+              return `
+                <a
+                  href="${item.href}"
+                  data-page="${item.id}"
+                  class="vw-top-nav-item ${isActive ? 'active' : ''}"
+                >
+                  <span class="vw-nav-icon ${isActive ? 'nav-icon-pop' : ''}">${item.icon}</span>
+                  <span>${item.label}</span>
+                </a>
+              `;
+            })
+            .join('')}
+        </nav>
+
+        <!-- 3. RIGHT: Utility Controls (Level Selector + Theme Toggle + Country Selector + Sign In Pill + Mobile Toggle) -->
+        <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <!-- Active "Level: Beginner" Selector Pill (Dropdown) -->
+          <div class="relative">
+            <button
+              type="button"
+              id="top-level-btn"
+              onclick="toggleTopLevelPicker()"
+              class="font-bengali flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border text-xs font-bold transition-all hover:border-[#2D5A4C]"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+              title="Current Level: ${levelTitle} &bull; Click to switch"
+            >
+              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: var(--accent-sage);"></span>
+              <span class="hidden xs:inline">Level: </span><span>${levelTitle}</span>
+              <span class="text-[9px] text-gray-400 ml-0.5">&blacktriangledown;</span>
+            </button>
+
+            <!-- Inline Level Switcher Popover -->
+            <div
+              id="top-level-picker"
+              class="hidden absolute right-0 mt-2 w-48 rounded-2xl border p-1.5 shadow-lg z-50 vw-panel-reveal"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+            >
+              <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border-b mb-1" style="color: var(--ink-muted); border-color: var(--border-subtle);">
+                Select Level &bull; লেভেল নির্বাচন
+              </div>
+              ${(typeof LEVEL_META !== 'undefined' ? LEVEL_META : [
+                { id: 'beginner', title: 'Beginner', bengaliSubtitle: 'প্রাথমিক' },
+                { id: 'intermediate', title: 'Intermediate', bengaliSubtitle: 'মাধ্যমিক' },
+                { id: 'advanced', title: 'Advanced', bengaliSubtitle: 'উচ্চতর' },
+                { id: 'pro', title: 'Pro', bengaliSubtitle: 'দক্ষ' }
+              ])
+                .map((lvl) => {
+                  const isSelected = lvl.id === currentLevelId;
+                  return `
+                    <button
+                      type="button"
+                      onclick="selectTopLevel('${lvl.id}')"
+                      class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                        isSelected ? 'bg-[#EEF4F1] text-[#2D5A4C]' : 'text-gray-700 hover:bg-[#FAF8F5]'
+                      }"
+                      style="${isSelected ? 'background-color: var(--accent-sage-soft); color: var(--accent-sage);' : 'color: var(--ink-primary);'}"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#2D5A4C]' : 'bg-gray-300'}"></span>
+                        <span>${lvl.title}</span>
+                      </div>
+                      <span class="font-bengali text-[10px] font-normal" style="color: var(--ink-muted);">${lvl.bengaliSubtitle}</span>
+                    </button>
+                  `;
+                })
+                .join('')}
+            </div>
+          </div>
+
+          <!-- 1. Dark / Light Theme Toggle (Moon & Sun Icon Button) -->
+          <button
+            type="button"
+            id="vw-theme-toggle-btn"
+            onclick="toggleTheme()"
+            class="vw-theme-toggle-btn"
+            title="${isDark ? 'Switch to Light Mode &bull; লাইট মোড' : 'Switch to Dark Mode &bull; ডার্ক মোড'}"
+            aria-label="Toggle theme"
+          >
+            <span class="vw-theme-toggle-icon">
+              ${isDark ? getSunIconSvg() : getMoonIconSvg()}
+            </span>
+          </button>
+
+          <!-- 2. Country Selector (Circular Country Button + Dropdown) -->
+          <div class="relative">
+            <button
+              type="button"
+              id="vw-country-btn"
+              onclick="toggleCountryPicker()"
+              class="vw-country-btn"
+              title="Pronunciation Accent: ${selectedCountry.name} (${selectedCountry.lang}) &bull; Click to switch"
+            >
+              <span class="vw-country-flag text-base leading-none">${selectedCountry.flag}</span>
+              <span class="vw-country-code hidden xl:inline text-[11px] font-bold" style="color: var(--ink-primary);">${selectedCountry.id}</span>
+              <span class="text-[8px] text-gray-400">&blacktriangledown;</span>
+            </button>
+
+            <!-- Country Dropdown Menu -->
+            <div
+              id="vw-country-picker"
+              class="hidden absolute right-0 mt-2 w-64 rounded-2xl border p-2 shadow-xl z-50 vw-panel-reveal"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+            >
+              <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border-b mb-1" style="color: var(--ink-muted); border-color: var(--border-subtle);">
+                Pronunciation Accent &bull; উচ্চারণ ধরন
+              </div>
+              ${Object.values(COUNTRY_CONFIG)
+                .map((c) => {
+                  const isSelected = c.id === selectedCountry.id;
+                  return `
+                    <button
+                      type="button"
+                      onclick="selectCountry('${c.id}')"
+                      class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                        isSelected ? 'bg-[#EEF4F1] text-[#2D5A4C]' : 'hover:bg-black/5'
+                      }"
+                      style="${isSelected ? 'background-color: var(--accent-sage-soft); color: var(--accent-sage);' : 'color: var(--ink-primary);'}"
+                    >
+                      <div class="flex items-center gap-2.5">
+                        <span class="text-lg leading-none">${c.flag}</span>
+                        <div class="text-left">
+                          <span class="block text-xs font-bold">${c.name}</span>
+                          <span class="block text-[10px] font-normal" style="color: var(--ink-muted);">${c.accentLabel}</span>
+                        </div>
+                      </div>
+                      ${isSelected ? '<span class="text-xs font-bold" style="color: var(--accent-sage);">&check;</span>' : ''}
+                    </button>
+                  `;
+                })
+                .join('')}
+            </div>
+          </div>
+
+          <!-- 3. Sign In Pill Button & Authentication Modal -->
+          ${userProfile ? `
+            <div class="relative">
+              <button
+                type="button"
+                id="vw-user-menu-btn"
+                onclick="toggleUserMenu()"
+                class="vw-auth-user-btn"
+                title="Signed in as ${userProfile.name}"
+              >
+                <span class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 shadow-xs" style="background-color: var(--accent-sage);">
+                  ${userProfile.initial || userProfile.name.charAt(0).toUpperCase()}
+                </span>
+                <span class="hidden sm:inline max-w-[90px] truncate">${userProfile.name}</span>
+                <span class="text-[8px] text-gray-400 ml-0.5">&blacktriangledown;</span>
+              </button>
+
+              <!-- User Profile Dropdown -->
+              <div
+                id="vw-user-menu-dropdown"
+                class="hidden absolute right-0 mt-2 w-64 rounded-2xl border p-3 shadow-xl z-50 vw-panel-reveal"
+                style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+              >
+                <div class="flex items-center gap-2.5 pb-3 border-b" style="border-color: var(--border-subtle);">
+                  <span class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-xs" style="background-color: var(--accent-sage);">
+                    ${userProfile.initial || userProfile.name.charAt(0).toUpperCase()}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold truncate" style="color: var(--ink-primary);">${userProfile.name}</p>
+                    <p class="text-[11px] truncate" style="color: var(--ink-muted);">${userProfile.email}</p>
+                  </div>
+                </div>
+
+                <div class="py-2 space-y-1">
+                  <div class="flex items-center justify-between px-2 py-1 rounded-xl text-xs" style="color: var(--ink-secondary);">
+                    <span>Membership</span>
+                    <span class="font-bold text-[10px] px-2 py-0.5 rounded-full" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">Active Learner</span>
+                  </div>
+                  <a href="tracker.html" class="flex items-center justify-between px-2 py-1.5 rounded-xl text-xs font-bold transition-colors hover:bg-black/5" style="color: var(--ink-primary);">
+                    <span>View Daily Progress</span>
+                    <span>&rarr;</span>
+                  </a>
+                </div>
+
+                <div class="pt-2 border-t" style="border-color: var(--border-subtle);">
+                  <button
+                    type="button"
+                    onclick="handleSignOut()"
+                    class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-500/10 transition-colors"
+                  >
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    <span>Sign Out &bull; লগ আউট</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : `
+            <button
+              type="button"
+              id="vw-auth-btn"
+              onclick="openAuthModal()"
+              class="vw-auth-pill-btn"
+              title="Sign in to save your vocabulary progress"
+            >
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span class="hidden sm:inline">Sign In</span>
+            </button>
+          `}
+
+          <!-- Mobile Hamburger Toggle (< md) -->
+          <button
+            type="button"
+            onclick="toggleMobileNavMenu()"
+            aria-label="Toggle navigation menu"
+            class="md:hidden p-2 rounded-xl border hover:bg-black/5 transition-colors"
+            style="border-color: var(--border-subtle); color: var(--ink-primary);"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Dropdown Menu (< md) -->
+      <div
+        id="vw-mobile-nav-menu"
+        class="hidden md:hidden border-t px-4 py-3 space-y-2 backdrop-blur-md"
+        style="background-color: rgba(250, 248, 245, 0.98); border-color: var(--border-subtle);"
+      >
+        <!-- Mobile Utility Shortcut Row -->
+        <div class="flex items-center justify-between pb-2 mb-1 border-b" style="border-color: var(--border-subtle);">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold" style="color: var(--ink-muted);">Settings:</span>
+            <!-- Mobile Theme Toggle -->
+            <button
+              type="button"
+              onclick="toggleTheme()"
+              class="vw-theme-toggle-btn w-8 h-8 text-xs"
+              title="Toggle theme"
+            >
+              <span class="vw-theme-toggle-icon">
+                ${isDark ? getSunIconSvg() : getMoonIconSvg()}
+              </span>
+            </button>
+
+            <!-- Mobile Country Indicator -->
+            <button
+              type="button"
+              onclick="toggleCountryPicker()"
+              class="vw-country-btn h-8 text-xs px-2"
+              title="Country accent"
+            >
+              <span>${selectedCountry.flag}</span>
+              <span class="text-[11px] font-bold">${selectedCountry.id}</span>
+            </button>
+          </div>
+
+          <!-- Mobile Sign In / Profile -->
+          ${userProfile ? `
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold truncate max-w-[100px]" style="color: var(--ink-primary);">${userProfile.name}</span>
+              <button type="button" onclick="handleSignOut()" class="text-[11px] font-bold text-red-600 hover:underline">
+                Sign Out
+              </button>
+            </div>
+          ` : `
+            <button
+              type="button"
+              onclick="openAuthModal()"
+              class="vw-auth-pill-btn h-8 text-xs px-3"
+            >
+              <span>Sign In</span>
+            </button>
+          `}
+        </div>
+
+        <!-- 6 Main Navigation Links -->
+        ${navLinks
+          .map((item) => {
+            const isActive = activePage === item.id;
+            return `
+              <a
+                href="${item.href}"
+                data-page="${item.id}"
+                class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  isActive ? 'bg-[#EEF4F1] text-[#2D5A4C]' : 'text-gray-700 hover:bg-black/5'
+                }"
+              >
+                <span class="vw-nav-icon ${isActive ? 'nav-icon-pop' : ''}">${item.icon}</span>
+                <span>${item.label}</span>
+              </a>
+            `;
+          })
+          .join('')}
+      </div>
+    </header>
+
+    <!-- Global Sign In / Authentication Modal -->
+    <div id="vw-auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs hidden">
+      <div class="fixed inset-0" onclick="closeAuthModal()"></div>
+      <div
+        class="relative w-full max-w-md rounded-3xl border p-6 sm:p-8 shadow-2xl z-10 vw-view-enter"
+        style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+      >
+        <button
+          type="button"
+          onclick="closeAuthModal()"
+          class="absolute top-5 right-5 w-8 h-8 rounded-full border flex items-center justify-center transition-colors hover:border-[#2D5A4C]"
+          style="border-color: var(--border-subtle); color: var(--ink-muted);"
+          aria-label="Close"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+
+        <div class="flex items-center gap-3 mb-5">
+          <div
+            class="w-10 h-10 rounded-2xl flex items-center justify-center font-editorial font-bold text-xl text-white shadow-xs shrink-0"
+            style="background-color: var(--accent-sage);"
+          >
+            V
+          </div>
+          <div>
+            <h3 class="font-editorial text-xl font-bold" style="color: var(--ink-primary);">
+              Sign In to Vocabulary World
+            </h3>
+            <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-muted);">
+              আপনার শব্দ শেখার অগ্রগতি ট্র্যাক ও সংরক্ষণ করুন
+            </p>
+          </div>
+        </div>
+
+        <form id="vw-auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-secondary);">
+              Full Name &bull; পূর্ণ নাম
+            </label>
+            <input
+              id="auth-name-input"
+              type="text"
+              required
+              placeholder="e.g. John Doe / রাকিব হাসান"
+              class="w-full px-4 py-2.5 rounded-xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2D5A4C]/30 transition-all"
+              style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-secondary);">
+              Email Address &bull; ইমেইল ঠিকানা
+            </label>
+            <input
+              id="auth-email-input"
+              type="email"
+              placeholder="you@example.com"
+              class="w-full px-4 py-2.5 rounded-xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2D5A4C]/30 transition-all"
+              style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="vw-auth-pill-btn w-full py-3 justify-center text-sm shadow-md mt-2"
+          >
+            <span>Sign In &bull; সাইন ইন</span>
+          </button>
+
+          <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t" style="border-color: var(--border-subtle);"></div>
+            <span class="flex-shrink mx-3 text-[11px] font-bold uppercase" style="color: var(--ink-muted);">Or &bull; অথবা</span>
+            <div class="flex-grow border-t" style="border-color: var(--border-subtle);"></div>
+          </div>
+
+          <button
+            type="button"
+            onclick="handleGuestAuth()"
+            class="w-full py-2.5 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all hover:border-[#2D5A4C]"
+            style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>Continue as Guest &bull; অতিথি হিসেবে প্রবেশ</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  `;
+
+  // Initialize LanGeek-style horizontal sliding pill highlight
+  initTopNavSlidingPill();
+}
+
+function realignTopNavSlidingPill() {
+  const nav = document.getElementById('vw-top-nav');
+  const pill = document.getElementById('vw-top-sliding-pill');
+  if (!nav || !pill) return;
+  const activeItem = nav.querySelector('.vw-top-nav-item.active');
+  if (activeItem) {
+    pill.style.transition = 'none';
+    pill.style.width = `${activeItem.offsetWidth}px`;
+    pill.style.transform = `translate3d(${activeItem.offsetLeft}px, 0, 0)`;
+    void pill.offsetWidth;
+    pill.style.transition = '';
+  }
+}
+
+function initTopNavSlidingPill() {
+  const nav = document.getElementById('vw-top-nav');
+  const pill = document.getElementById('vw-top-sliding-pill');
+  if (!nav || !pill) return;
+
+  const items = Array.from(nav.querySelectorAll('.vw-top-nav-item'));
+  if (!items.length) return;
+
+  const activeItem = items.find((el) => el.classList.contains('active')) || null;
+  if (activeItem) {
+    const popIcon = activeItem.querySelector('.vw-nav-icon.nav-icon-pop');
+    if (popIcon) {
+      setTimeout(() => {
+        popIcon.classList.remove('nav-icon-pop');
+      }, 550);
+    }
+  }
+
+  function movePillTo(targetEl, animate = true) {
+    if (!targetEl) {
+      pill.style.opacity = '0';
+      return;
+    }
+
+    if (!animate) {
+      pill.style.transition = 'none';
+    } else {
+      pill.style.transition = '';
+    }
+
+    const targetLeft = targetEl.offsetLeft;
+    const targetWidth = targetEl.offsetWidth;
+
+    pill.style.width = `${targetWidth}px`;
+    pill.style.transform = `translate3d(${targetLeft}px, 0, 0)`;
+    pill.style.opacity = '1';
+
+    if (!animate) {
+      void pill.offsetWidth;
+      pill.style.transition = '';
+    }
+  }
+
+  // Cross-Page Slide Continuity:
+  let prevLeft = null;
+  let prevWidth = null;
+  let prevPage = null;
+
+  try {
+    const rawLeft = sessionStorage.getItem(TOP_NAV_LEFT_KEY);
+    const rawWidth = sessionStorage.getItem(TOP_NAV_WIDTH_KEY);
+    prevPage = sessionStorage.getItem(TOP_NAV_PAGE_KEY);
+    if (rawLeft !== null) prevLeft = parseFloat(rawLeft);
+    if (rawWidth !== null) prevWidth = parseFloat(rawWidth);
+  } catch (e) {}
+
+  const curPage = activeItem ? activeItem.dataset.page : null;
+
+  if (activeItem) {
+    const curLeft = activeItem.offsetLeft;
+    const curWidth = activeItem.offsetWidth;
+
+    // If navigated from another tab/page, glide smoothly from the previous position!
+    if (prevLeft !== null && !isNaN(prevLeft) && (prevPage !== curPage || Math.abs(prevLeft - curLeft) > 2)) {
+      // 1. Initial position at previous tab's horizontal offset without animation
+      pill.style.transition = 'none';
+      pill.style.width = `${prevWidth || curWidth}px`;
+      pill.style.transform = `translate3d(${prevLeft}px, 0, 0)`;
+      pill.style.opacity = '1';
+
+      // Force synchronous reflow
+      void pill.offsetWidth;
+
+      // 2. Animate smoothly to new active tab's position
+      requestAnimationFrame(() => {
+        pill.style.transition = '';
+        pill.style.width = `${curWidth}px`;
+        pill.style.transform = `translate3d(${curLeft}px, 0, 0)`;
+        try {
+          sessionStorage.setItem(TOP_NAV_LEFT_KEY, String(curLeft));
+          sessionStorage.setItem(TOP_NAV_WIDTH_KEY, String(curWidth));
+          if (curPage) sessionStorage.setItem(TOP_NAV_PAGE_KEY, curPage);
+        } catch (e) {}
+      });
+    } else {
+      // Direct positioning on initial visit or same-page reload
+      movePillTo(activeItem, false);
+      try {
+        sessionStorage.setItem(TOP_NAV_LEFT_KEY, String(curLeft));
+        sessionStorage.setItem(TOP_NAV_WIDTH_KEY, String(curWidth));
+        if (curPage) sessionStorage.setItem(TOP_NAV_PAGE_KEY, curPage);
+      } catch (e) {}
+    }
+  } else {
+    pill.style.opacity = '0';
+  }
+
+  // Hover Glide across the 6 items (Left-to-Right or Right-to-Left)
+  items.forEach((item) => {
+    // Click: Save horizontal position for cross-page continuity
+    item.addEventListener('click', () => {
+      try {
+        const fromLeft = activeItem ? activeItem.offsetLeft : item.offsetLeft;
+        const fromWidth = activeItem ? activeItem.offsetWidth : item.offsetWidth;
+        sessionStorage.setItem(TOP_NAV_LEFT_KEY, String(fromLeft));
+        sessionStorage.setItem(TOP_NAV_WIDTH_KEY, String(fromWidth));
+        if (activeItem && activeItem.dataset.page) {
+          sessionStorage.setItem(TOP_NAV_PAGE_KEY, activeItem.dataset.page);
+        }
+      } catch (e) {}
+      movePillTo(item, true);
+    });
+
+    // Mouseenter: Glide smoothly to hovered item
+    item.addEventListener('mouseenter', () => {
+      movePillTo(item, true);
+    });
+  });
+
+  // Mouseleave on navbar: Glide back to active tab
+  nav.addEventListener('mouseleave', () => {
+    if (activeItem) {
+      movePillTo(activeItem, true);
+    } else {
+      pill.style.opacity = '0';
+    }
+  });
+}
+
+// Global window resize listener to keep horizontal pill aligned
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', realignTopNavSlidingPill);
+}
+
+function renderAppFooter() {
+  const footerContainer = document.getElementById('app-footer');
+  if (!footerContainer) return;
+
+  const path = (window.location.pathname || '').toLowerCase();
+  const file = path.split('/').pop().split('\\').pop() || '';
+  const isIndex = file === '' || file === 'index.html';
+  const showNavLinks = isLevelChosen() || !isIndex;
+
+  footerContainer.innerHTML = `
+    <footer
+      class="border-t py-6 px-4 sm:px-6 mt-12"
+      style="border-color: var(--border-subtle); background-color: var(--surface-white);"
+    >
+      <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style="color: var(--ink-muted);">
+        <p class="font-editorial font-semibold" style="color: var(--ink-primary);">
+          Vocabulary World &copy; <span>${new Date().getFullYear()}</span> &bull; Bengali-English Vocabulary Platform
+        </p>
+        ${
+          showNavLinks
+            ? `
+          <div class="flex items-center gap-4 text-xs font-semibold flex-wrap">
+            <a href="index.html" class="hover:underline">Levels</a>
+            <a href="learn.html" class="hover:underline">Learn</a>
+            <a href="flashcards.html" class="hover:underline">Flashcards</a>
+            <a href="games.html" class="hover:underline">Games</a>
+            <a href="tracker.html" class="hover:underline">Tracker</a>
+            <a href="add-words.html" class="hover:underline text-[#2D5A4C] font-bold">+ Add Words</a>
+          </div>
+        `
+            : ''
+        }
+      </div>
+    </footer>
+  `;
+}
+
+function ensureToastElement() {
+  if (document.getElementById('vw-toast')) return;
+  const toastDiv = document.createElement('div');
+  toastDiv.id = 'vw-toast';
+  toastDiv.setAttribute('role', 'status');
+  toastDiv.setAttribute('aria-live', 'polite');
+  toastDiv.className = 'hidden fixed bottom-5 right-5 z-50 max-w-sm items-center gap-3 px-4 py-3 rounded-2xl border shadow-lg';
+  toastDiv.style = 'background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);';
+  toastDiv.innerHTML = `
+    <span id="vw-toast-text" class="font-bengali text-xs font-semibold"></span>
+    <button
+      type="button"
+      onclick="hideToast()"
+      aria-label="Close message"
+      class="text-base font-bold px-1.5 rounded hover:bg-black/5"
+      style="color: var(--ink-muted);"
+    >
+      &times;
+    </button>
+  `;
+  document.body.appendChild(toastDiv);
+}
+
+/* =====================================================================
+   5. EDITORIAL FALLBACK SVG BADGE (BOTANICAL SAGE #2D5A4C)
+====================================================================== */
+function getEditorialFallbackSvg(word, sizeClass = 'w-full h-full') {
+  const initial = (word || 'V').charAt(0).toUpperCase();
+  const safeWord = escapeHtml(word || '');
+  return `
+    <div
+      class="${sizeClass} rounded-2xl flex flex-col items-center justify-center p-2 text-center select-none"
+      style="background: linear-gradient(135deg, #FAF8F5 0%, #EEF4F1 100%);"
+      aria-label="${safeWord} illustration"
+    >
+      <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 21V11" stroke="#2D5A4C" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 11C12 6.5 15.5 3 20 3C20 7.5 16.5 11 12 11Z" fill="#2D5A4C" opacity="0.85"/>
+        <path d="M12 14C12 10.5 9 8 5 8C5 11.5 8 14 12 14Z" fill="#C26D53" opacity="0.85"/>
+      </svg>
+      <span class="font-editorial text-2xl sm:text-3xl font-bold leading-none" style="color: var(--accent-sage);">
+        ${initial}
+      </span>
+      <span class="text-[9px] font-bold uppercase tracking-wider truncate max-w-[76px] mt-1" style="color: var(--ink-secondary);">
+        ${safeWord}
+      </span>
+    </div>
+  `;
+}
+
+/* =====================================================================
+   6. AUTOMATIC WORD IMAGE LOADER
+      - Fast localStorage caching ('vw_word_images_v1')
+      - Wikipedia / Wikimedia Commons API (origin=*)
+      - Optional Pixabay API Key (window.PIXABAY_API_KEY)
+      - Editorial Botanical Sage SVG fallback
+====================================================================== */
+const WordImageLoader = {
+  cacheKey: 'vw_word_images_v1',
+  memoryCache: {},
+
+  init() {
+    try {
+      const raw = localStorage.getItem(this.cacheKey);
+      if (raw) {
+        this.memoryCache = JSON.parse(raw) || {};
+      }
+    } catch (e) {
+      this.memoryCache = {};
+    }
+  },
+
+  saveToCache(key, url) {
+    if (!key) return;
+    this.memoryCache[key] = url;
+    try {
+      localStorage.setItem(this.cacheKey, JSON.stringify(this.memoryCache));
+    } catch (e) {}
+  },
+
+  getCached(key) {
+    return this.memoryCache[key] || null;
+  },
+
+  async fetchFromPixabay(query) {
+    const apiKey = window.PIXABAY_API_KEY || (typeof localStorage !== 'undefined' && localStorage.getItem('vw_pixabay_api_key'));
+    if (!apiKey || !query) return null;
+    try {
+      const clean = encodeURIComponent(query.replace(/[^\w\s-]/gi, ' ').trim());
+      const res = await fetch(`https://pixabay.com/api/?key=${encodeURIComponent(apiKey)}&q=${clean}&image_type=photo&per_page=3&safesearch=true`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.hits && data.hits.length > 0) {
+          return data.hits[0].webformatURL || data.hits[0].previewURL;
+        }
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  async fetchFromWikipediaSearch(query) {
+    if (!query) return null;
+    try {
+      const cleanQuery = query.replace(/[^\w\s-]/gi, ' ').trim();
+      const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrlimit=1&prop=pageimages&pithumbsize=320&format=json&origin=*`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.query && data.query.pages) {
+          const pages = Object.values(data.query.pages);
+          const found = pages.find((p) => p.thumbnail && p.thumbnail.source);
+          if (found && found.thumbnail.source) {
+            return found.thumbnail.source;
+          }
+        }
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  async fetchFromWikipediaSummary(word) {
+    if (!word) return null;
+    try {
+      const clean = word.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+      if (!clean) return null;
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(clean)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.thumbnail && data.thumbnail.source) {
+          return data.thumbnail.source;
+        }
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  async fetchFromWikimediaCommons(query) {
+    if (!query) return null;
+    try {
+      const cleanQuery = query.replace(/[^\w\s-]/gi, ' ').trim();
+      const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=320&format=json&origin=*`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.query && data.query.pages) {
+          const pages = Object.values(data.query.pages);
+          for (const page of pages) {
+            if (page.imageinfo && page.imageinfo[0]) {
+              const info = page.imageinfo[0];
+              const thumb = info.thumburl || info.url;
+              if (thumb && !thumb.endsWith('.svg') && !thumb.endsWith('.ogg')) {
+                return thumb;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  async getWordImageUrl(word, imageQuery) {
+    const cacheKey = (word || '').toLowerCase().trim();
+    if (!cacheKey) return null;
+
+    // 1. Check Cache
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    // 2. Optional Pixabay API Key
+    let imgUrl = await this.fetchFromPixabay(imageQuery || word);
+    if (imgUrl) {
+      this.saveToCache(cacheKey, imgUrl);
+      return imgUrl;
+    }
+
+    // 3. Wikipedia Action API with imageQuery
+    if (imageQuery) {
+      imgUrl = await this.fetchFromWikipediaSearch(imageQuery);
+      if (imgUrl) {
+        this.saveToCache(cacheKey, imgUrl);
+        return imgUrl;
+      }
+    }
+
+    // 4. Wikipedia Summary API by direct word
+    imgUrl = await this.fetchFromWikipediaSummary(word);
+    if (imgUrl) {
+      this.saveToCache(cacheKey, imgUrl);
+      return imgUrl;
+    }
+
+    // 5. Wikipedia Search by direct word
+    imgUrl = await this.fetchFromWikipediaSearch(word);
+    if (imgUrl) {
+      this.saveToCache(cacheKey, imgUrl);
+      return imgUrl;
+    }
+
+    // 6. Wikimedia Commons Search
+    imgUrl = await this.fetchFromWikimediaCommons(imageQuery || word);
+    if (imgUrl) {
+      this.saveToCache(cacheKey, imgUrl);
+      return imgUrl;
+    }
+
+    // No photo found -> mark as fallback to avoid repeated empty requests
+    this.saveToCache(cacheKey, 'svg-fallback');
+    return null;
+  },
+
+  mountImage(containerEl, wordItem) {
+    if (!containerEl || !wordItem) return;
+    const word = wordItem.word;
+    const query = wordItem.imageQuery || word;
+    const cacheKey = word.toLowerCase().trim();
+
+    // 1. Instant Render if already in cache
+    const cached = this.getCached(cacheKey);
+    if (cached) {
+      if (cached === 'svg-fallback') {
+        containerEl.innerHTML = getEditorialFallbackSvg(word);
+      } else {
+        containerEl.innerHTML = `<img src="${cached}" alt="${escapeHtml(word)} - context photo" class="w-full h-full object-cover rounded-2xl" loading="lazy" onerror="this.parentElement.innerHTML = getEditorialFallbackSvg('${escapeHtml(word)}')" />`;
+      }
+      return;
+    }
+
+    // 2. Skeleton loader while fetching
+    containerEl.innerHTML = `
+      <div class="animate-pulse w-full h-full flex flex-col items-center justify-center p-2 text-center" style="background-color: var(--surface-sand);">
+        <svg class="w-6 h-6 opacity-40 mb-1" style="color: var(--accent-sage);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span class="text-[9px] font-mono tracking-wider opacity-60 uppercase" style="color: var(--ink-muted);">Photo</span>
+      </div>
+    `;
+
+    this.getWordImageUrl(word, query)
+      .then((url) => {
+        if (!url || url === 'svg-fallback') {
+          containerEl.innerHTML = getEditorialFallbackSvg(word);
+          return;
+        }
+
+        const img = new Image();
+        img.src = url;
+        img.alt = `${word} - context photo`;
+        img.className = 'w-full h-full object-cover rounded-2xl opacity-0 transition-opacity duration-300';
+        img.loading = 'lazy';
+
+        img.onload = () => {
+          containerEl.innerHTML = '';
+          containerEl.appendChild(img);
+          requestAnimationFrame(() => {
+            img.classList.remove('opacity-0');
+            img.classList.add('opacity-100');
+          });
+        };
+
+        img.onerror = () => {
+          this.saveToCache(cacheKey, 'svg-fallback');
+          containerEl.innerHTML = getEditorialFallbackSvg(word);
+        };
+      })
+      .catch(() => {
+        containerEl.innerHTML = getEditorialFallbackSvg(word);
+      });
+  },
+
+  mountAll(words) {
+    if (!words || !Array.isArray(words)) return;
+    words.forEach((item) => {
+      const el = document.getElementById(`word-img-frame-${item.id}`);
+      if (el) {
+        this.mountImage(el, item);
+      }
+    });
+  }
+};
+
+/* =====================================================================
+   7. AUTO-INITIALIZATION HOOK
+====================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    PronunciationEngine.init();
+  loadPersistedState();
+  WordImageLoader.init();
+  ensureToastElement();
+  updateTrackerDisplay();
+});

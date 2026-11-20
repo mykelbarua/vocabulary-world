@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add New Words — Vocabulary World</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Fraunces, Plus Jakarta Sans, Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Shared Editorial Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- SheetJS (xlsx) CDN for Excel & CSV Client-Side Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- PDF.js CDN for PDF Client-Side Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+  <!-- Dark Mode Zero-Flash Initializer -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('vw_theme');
+        if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Shared Sidebar & Mobile Top Navigation -->
+  <div id="app-header"></div>
+
+  <!-- Main Content Layout (Adjusts margin based on sidebar state) -->
+  <div class="vw-main-layout flex-1 flex flex-col min-w-0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-9">
+      <div id="add-words-mount" class="vw-panel-reveal space-y-8">
+
+        <!-- Sticky Top Sub-Bar with Navigation and Stats -->
+        <div
+          class="sticky top-16 z-20 rounded-2xl p-3 border backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-sm"
+        style="background-color: rgba(255, 255, 255, 0.95); border-color: var(--border-subtle);"
+      >
+        <div class="flex items-center gap-2">
+          <a
+            href="learn.html"
+            class="font-bengali inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+            style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+          >
+            &larr; শব্দ ও পাঠে ফিরুন (Back to Learn)
+          </a>
+          <a
+            href="games.html"
+            class="font-bengali hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold hover:border-[#2D5A4C]"
+            style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+          >
+            মেমোরি গেম খেলুন &rarr;
+          </a>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <span
+            id="subbar-custom-count-badge"
+            class="font-bengali px-3 py-1 rounded-full text-xs font-bold border"
+            style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.25); color: var(--accent-sage);"
+          >
+            আমার নিজস্ব শব্দ: 0 টি
+          </span>
+          <a
+            href="#my-words-section"
+            class="font-bengali px-3 py-1.5 rounded-xl text-xs font-bold border hover:border-[#2D5A4C]"
+            style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+          >
+            তালিকায় যান &darr;
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero Header Banner -->
+      <div
+        class="rounded-3xl p-6 sm:p-9 border flex flex-col md:flex-row md:items-center justify-between gap-6"
+        style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+      >
+        <div>
+          <span
+            class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border mb-3"
+            style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.22); color: var(--accent-sage);"
+          >
+            EXPAND VOCABULARY &bull; শব্দভান্ডার সম্প্রসারণ
+          </span>
+          <h1 class="font-editorial text-2xl sm:text-4xl font-bold" style="color: var(--ink-primary);">
+            Add New Words to Vocabulary World
+          </h1>
+          <p class="font-bengali text-xs sm:text-sm mt-1.5 leading-relaxed" style="color: var(--ink-secondary);">
+            এককভাবে, একসাথে ৫০–১০০ শব্দ পেস্ট করে অথবা Excel (.xlsx, .csv) ও PDF ফাইল আপলোড করে তোমার শব্দভান্ডারে নতুন শব্দ যোগ করো। সংরক্ষিত শব্দগুলো স্বয়ংক্রিয়ভাবে পাঠ্যক্রম, ফ্ল্যাশকার্ড, অডিও উচ্চারণ ও মেমোরি গেমে যুক্ত হবে।
+          </p>
+        </div>
+
+        <div class="flex flex-col items-start md:items-end gap-2 shrink-0">
+          <span
+            class="font-editorial text-sm font-bold px-3.5 py-1.5 rounded-xl border"
+            style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--accent-sage);"
+          >
+            Persistent Local Database
+          </span>
+          <span class="font-bengali text-xs" style="color: var(--ink-muted);">
+            ডাটা ব্রাউজারের লোকাল স্টোরেজে সম্পূর্ণ নিরাপদে সংরক্ষিত থাকে
+          </span>
+        </div>
+      </div>
+
+      <!-- 3 Method Tabs -->
+      <div class="space-y-6">
+        <div class="flex flex-wrap items-center gap-2 border-b pb-3" style="border-color: var(--border-subtle);">
+          <button
+            type="button"
+            id="tab-btn-single"
+            onclick="switchAddTab('single')"
+            class="vw-section-tab active font-bengali px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2"
+          >
+            <span>✏️ 1. Add Single Word (একক শব্দ)</span>
+          </button>
+          <button
+            type="button"
+            id="tab-btn-bulk"
+            onclick="switchAddTab('bulk')"
+            class="vw-section-tab font-bengali px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2"
+          >
+            <span>📋 2. Bulk Paste (৫০-১০০ শব্দ পেস্ট)</span>
+          </button>
+          <button
+            type="button"
+            id="tab-btn-upload"
+            onclick="switchAddTab('upload')"
+            class="vw-section-tab font-bengali px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2"
+          >
+            <span>📁 3. File Upload (Excel &amp; PDF)</span>
+          </button>
+        </div>
+
+        <!-- ==============================================================
+             PANEL 1: ADD SINGLE WORD FORM
+        =============================================================== -->
+        <div id="panel-single" class="space-y-6">
+          <div
+            class="rounded-3xl p-6 sm:p-8 border space-y-6"
+            style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+          >
+            <div class="border-b pb-4" style="border-color: var(--border-subtle);">
+              <h2 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                Add a Single Vocabulary Word
+              </h2>
+              <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                একটি নির্দিষ্ট ইংরেজি শব্দ, এর বাংলা অর্থ, উদাহরণ বাক্য এবং লেভেল নির্ধারণ করে যোগ করুন:
+              </p>
+            </div>
+
+            <form id="single-word-form" onsubmit="handleSingleWordSubmit(event)" class="space-y-5">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- English Word -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    English Word (ইংরেজি শব্দ) <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="single-word"
+                    required
+                    placeholder="e.g. Eloquent"
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm font-editorial font-bold focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- Bengali Meaning -->
+                <div>
+                  <label class="block font-bengali text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Bengali Meaning (বাংলা অর্থ) <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="single-meaning"
+                    required
+                    placeholder="যেমন: বাগ্মী, সুন্দর ও আকর্ষণীয়ভাবে বক্তব্য প্রকাশকারী"
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm font-bengali font-bold focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- Target Level -->
+                <div>
+                  <label class="block font-bengali text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Proficiency Level (দক্ষতার স্তর) <span class="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="single-level"
+                    onchange="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm font-bold focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  >
+                    <option value="beginner">Beginner (প্রাথমিক স্তর)</option>
+                    <option value="intermediate" selected>Intermediate (মাধ্যমিক স্তর)</option>
+                    <option value="advanced">Advanced (উচ্চতর স্তর)</option>
+                    <option value="pro">Pro (পেশাদার স্তর)</option>
+                  </select>
+                </div>
+
+                <!-- Part of Speech -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Part of Speech (পদ)
+                  </label>
+                  <select
+                    id="single-pos"
+                    onchange="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm font-bold focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  >
+                    <option value="Adjective">Adjective</option>
+                    <option value="Noun">Noun</option>
+                    <option value="Verb">Verb</option>
+                    <option value="Adverb">Adverb</option>
+                    <option value="Phrase">Phrase</option>
+                    <option value="Idiom">Idiom</option>
+                  </select>
+                </div>
+
+                <!-- Example Sentence (EN) -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    English Example Sentence (ইংরেজি উদাহরণ বাক্য)
+                  </label>
+                  <input
+                    type="text"
+                    id="single-example"
+                    placeholder="e.g. The speaker gave an eloquent speech that inspired everyone."
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- Example Translation (BN) -->
+                <div>
+                  <label class="block font-bengali text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Bengali Example Translation (উদাহরণটির বাংলা অর্থ)
+                  </label>
+                  <input
+                    type="text"
+                    id="single-example-bn"
+                    placeholder="যেমন: বক্তা একটি বাগ্মী ভাষণ দিয়েছিলেন যা সবাইকে অনুপ্রাণিত করেছিল।"
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm font-bengali focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- English Explanation -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    English Definition / Explanation (ইংরেজি ব্যাখ্যা)
+                  </label>
+                  <input
+                    type="text"
+                    id="single-explanation"
+                    placeholder="e.g. Fluent or persuasive in speaking or writing."
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- Image Search Query -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Image Keyword for Auto Photo (ছবির জন্য কিওয়ার্ড)
+                  </label>
+                  <input
+                    type="text"
+                    id="single-image-query"
+                    placeholder="e.g. public speaker podium audience"
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- Synonyms (Comma separated) -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Synonyms (সমার্থক শব্দ — কমা দিয়ে লিখুন)
+                  </label>
+                  <input
+                    type="text"
+                    id="single-synonyms"
+                    placeholder="e.g. Articulate, Fluent, Expressive"
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+
+                <!-- Antonyms (Comma separated) -->
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--ink-primary);">
+                    Antonyms (বিপরীত শব্দ — কমা দিয়ে লিখুন)
+                  </label>
+                  <input
+                    type="text"
+                    id="single-antonyms"
+                    placeholder="e.g. Inarticulate, Hesitant, Dull"
+                    oninput="updateSinglePreview()"
+                    class="w-full px-4 py-3 rounded-2xl border text-sm focus:outline-none focus:border-[#2D5A4C]"
+                    style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  />
+                </div>
+              </div>
+
+              <!-- Form Buttons -->
+              <div class="pt-4 border-t flex flex-wrap items-center justify-between gap-3" style="border-color: var(--border-subtle);">
+                <button
+                  type="button"
+                  onclick="resetSingleForm()"
+                  class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold hover:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  ফর্ম ক্লিয়ার করুন (Clear)
+                </button>
+
+                <button
+                  type="submit"
+                  class="vw-btn-primary font-bengali px-7 py-3 rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+                >
+                  <span>+ শব্দ সেভ করুন (Save Word)</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Live Preview of Single Word -->
+          <div class="space-y-3">
+            <span class="text-xs font-bold uppercase tracking-wider block" style="color: var(--ink-muted);">
+              LIVE CARD PREVIEW &bull; কার্ডটি অ্যাপে যেমন দেখাবে:
+            </span>
+            <div id="single-live-preview-box"></div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             PANEL 2: BULK PASTE 50–100 WORDS
+        =============================================================== -->
+        <div id="panel-bulk" class="hidden space-y-6">
+          <div
+            class="rounded-3xl p-6 sm:p-8 border space-y-6"
+            style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+          >
+            <div class="border-b pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="border-color: var(--border-subtle);">
+              <div>
+                <h2 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                  Bulk Paste 50–100 Words
+                </h2>
+                <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                  একসাথে ৫০ থেকে ১০০টি ইংরেজি শব্দ এখানে পেস্ট করুন। নিচের যেকোন ফরম্যাট সমর্থিত:
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onclick="loadSample50Words()"
+                class="font-bengali px-4 py-2 rounded-xl border text-xs font-bold shrink-0 hover:border-[#2D5A4C]"
+                style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.25); color: var(--accent-sage);"
+              >
+                📝 ৫০টি নমুনা শব্দ লোড করুন (Load 50 Samples)
+              </button>
+            </div>
+
+            <!-- Supported Format Hints -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-2xl p-3 border text-xs" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                <strong class="block font-mono text-[11px] mb-1" style="color: var(--accent-sage);">ফরম্যাট ১: কমা দিয়ে আলাদা</strong>
+                <code class="text-[11px] block text-gray-600">Serene, Grateful, Diligent, Eloquent, Resilient...</code>
+              </div>
+              <div class="rounded-2xl p-3 border text-xs" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                <strong class="block font-mono text-[11px] mb-1" style="color: var(--accent-sage);">ফরম্যাট ২: প্রতি লাইনে একটি</strong>
+                <code class="text-[11px] block text-gray-600">Serene<br/>Grateful<br/>Diligent...</code>
+              </div>
+              <div class="rounded-2xl p-3 border text-xs" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                <strong class="block font-mono text-[11px] mb-1" style="color: var(--accent-sage);">ফরম্যাট ৩: অর্থসহ হাইফেন/কোলন</strong>
+                <code class="text-[11px] block text-gray-600">Eloquent - বাগ্মী<br/>Resilient : সহনশীল</code>
+              </div>
+            </div>
+
+            <!-- Textarea -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="font-bengali text-xs font-bold uppercase tracking-wider" style="color: var(--ink-primary);">
+                  শব্দের তালিকা পেস্ট করুন (Paste Word List):
+                </label>
+                <span id="bulk-char-counter" class="text-xs font-mono" style="color: var(--ink-muted);">
+                  0 শব্দ সনাক্ত
+                </span>
+              </div>
+              <textarea
+                id="bulk-textarea"
+                rows="11"
+                placeholder="এখানে ৫০–১০০ শব্দ পেস্ট করুন...&#10;উদাহরণ:&#10;Eloquent - বাগ্মী&#10;Resilient - সহনশীল&#10;Benevolent - দয়ালু&#10;Ubiquitous - সর্বব্যাপী&#10;Ephemeral - ক্ষণস্থায়ী"
+                oninput="updateBulkWordCount()"
+                class="w-full p-4 rounded-2xl border text-sm font-mono leading-relaxed focus:outline-none focus:border-[#2D5A4C]"
+                style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+              ></textarea>
+            </div>
+
+            <!-- Options Row -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <div class="flex items-center gap-3">
+                <label class="font-bengali text-xs font-bold" style="color: var(--ink-secondary);">
+                  ডিফল্ট লেভেল:
+                </label>
+                <select
+                  id="bulk-default-level"
+                  class="px-3.5 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate" selected>Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="pro">Pro</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="clearBulkText()"
+                  class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold hover:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  মুছে ফেলুন (Clear)
+                </button>
+                <button
+                  type="button"
+                  onclick="parseBulkTextAndPreview()"
+                  class="vw-btn-primary font-bengali px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2"
+                >
+                  <span>🔍 শব্দ পরীক্ষা ও প্রিভিউ দেখুন (Parse &amp; Preview)</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             PANEL 3: FILE UPLOAD (EXCEL & PDF)
+        =============================================================== -->
+        <div id="panel-upload" class="hidden space-y-6">
+          <div
+            class="rounded-3xl p-6 sm:p-8 border space-y-6"
+            style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+          >
+            <div class="border-b pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="border-color: var(--border-subtle);">
+              <div>
+                <h2 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                  Import Words from Excel (.xlsx, .csv) &amp; PDF (.pdf)
+                </h2>
+                <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                  SheetJS এবং PDF.js লাইব্রেরির মাধ্যমে ফাইলটি সম্পূর্ণ ক্লায়েন্ট-সাইডে সরাসরি ব্রাউজারে প্রসেস হবে:
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onclick="downloadSampleCsvTemplate()"
+                class="font-bengali px-3.5 py-2 rounded-xl border text-xs font-bold shrink-0 hover:border-[#2D5A4C] inline-flex items-center gap-1.5"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                <span>⬇️ CSV টেমপ্লেট ডাউনলোড করুন</span>
+              </button>
+            </div>
+
+            <!-- Drag and Drop Box -->
+            <div
+              id="file-drop-zone"
+              ondragover="handleDragOver(event)"
+              ondragleave="handleDragLeave(event)"
+              ondrop="handleFileDrop(event)"
+              class="border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-colors"
+              style="border-color: var(--border-hover); background-color: var(--bg-ivory);"
+              onclick="document.getElementById('file-input').click()"
+            >
+              <input
+                type="file"
+                id="file-input"
+                accept=".xlsx, .xls, .csv, .pdf"
+                class="hidden"
+                onchange="handleFileInputChange(event)"
+              />
+
+              <div class="max-w-md mx-auto space-y-3">
+                <div
+                  class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center border shadow-xs"
+                  style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.25); color: var(--accent-sage);"
+                >
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                </div>
+
+                <h3 class="font-editorial text-lg sm:text-xl font-bold" style="color: var(--ink-primary);">
+                  Drag &amp; Drop your Excel or PDF file here
+                </h3>
+                <p class="font-bengali text-xs sm:text-sm text-gray-500">
+                  অথবা আপনার কম্পিউটার থেকে ফাইল নির্বাচন করতে ক্লিক করুন (.xlsx, .xls, .csv, .pdf)
+                </p>
+
+                <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border" style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-secondary);">
+                    📊 Excel (.xlsx, .xls)
+                  </span>
+                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border" style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-secondary);">
+                    📑 CSV (.csv)
+                  </span>
+                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border" style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-secondary);">
+                    📄 PDF Document (.pdf)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected File Status Badge -->
+            <div id="selected-file-info" class="hidden rounded-2xl p-4 border flex items-center justify-between gap-4" style="background-color: var(--surface-sand); border-color: var(--border-subtle);">
+              <div class="flex items-center gap-3">
+                <span id="file-icon-badge" class="p-2.5 rounded-xl text-lg" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">📄</span>
+                <div>
+                  <strong id="file-name-text" class="text-sm font-bold block" style="color: var(--ink-primary);">file.xlsx</strong>
+                  <span id="file-size-text" class="text-xs" style="color: var(--ink-muted);">0 KB</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="removeSelectedFile()"
+                  class="font-bengali text-xs font-bold px-3 py-1.5 rounded-xl border hover:border-red-400 text-red-600"
+                  style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+                >
+                  রিমুভ করুন (Remove)
+                </button>
+              </div>
+            </div>
+
+            <!-- File Options & Parse Button -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+              <div class="flex items-center gap-3">
+                <label class="font-bengali text-xs font-bold" style="color: var(--ink-secondary);">
+                  ডিফল্ট লেভেল:
+                </label>
+                <select
+                  id="upload-default-level"
+                  class="px-3.5 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate" selected>Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="pro">Pro</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                id="btn-process-file"
+                onclick="processSelectedFile()"
+                disabled
+                class="vw-btn-primary font-bengali px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 disabled:opacity-45"
+              >
+                <span>📂 ফাইল প্রসেস ও প্রিভিউ দেখুন (Parse &amp; Preview)</span>
+                <span>&rarr;</span>
+              </button>
+            </div>
+
+            <!-- Parsing Spinner Indicator -->
+            <div id="file-parse-spinner" class="hidden text-center py-6 space-y-2">
+              <div class="inline-block w-8 h-8 border-3 border-[#2D5A4C] border-t-transparent rounded-full animate-spin"></div>
+              <p class="font-bengali text-xs font-bold" style="color: var(--accent-sage);">
+                ফাইলটি প্রসেস করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==============================================================
+             SHARED PREVIEW & CONFIRMATION AREA (BEFORE FINAL SAVING)
+        =============================================================== -->
+        <div id="preview-section" class="hidden space-y-5 vw-panel-reveal">
+          <div
+            class="rounded-3xl p-6 sm:p-8 border space-y-6"
+            style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+          >
+            <!-- Preview Top Bar with Word Count & Actions -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b" style="border-color: var(--border-subtle);">
+              <div>
+                <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                  <span
+                    id="preview-count-badge"
+                    class="badge-intermediate text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
+                  >
+                    0 Words Ready
+                  </span>
+                  <span
+                    id="preview-duplicate-badge"
+                    class="hidden font-bengali text-[11px] font-bold px-3 py-1 rounded-full border bg-amber-50 text-amber-800 border-amber-200"
+                  >
+                    0টি শব্দ ইতিমধ্যে ডাটাবেজে আছে
+                  </span>
+                </div>
+                <h3 class="font-editorial text-2xl font-bold" style="color: var(--ink-primary);">
+                  Review &amp; Confirm Before Saving
+                </h3>
+                <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                  শব্দগুলো সেভ করার আগে নিচের টেবিলে পর্যালোচনা করুন, প্রয়োজন অনুযায়ী লেভেল পরিবর্তন বা অপ্রয়োজনীয় শব্দ বাদ দিন:
+                </p>
+              </div>
+
+              <!-- Batch Level Changer & Filter -->
+              <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-bengali text-xs font-semibold" style="color: var(--ink-muted);">সবগুলোর লেভেল:</span>
+                  <select
+                    id="batch-level-select"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold"
+                    style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="pro">Pro</option>
+                  </select>
+                  <button
+                    type="button"
+                    onclick="applyBatchLevelToPreview()"
+                    class="font-bengali px-3 py-1.5 rounded-xl border text-xs font-bold hover:border-[#2D5A4C]"
+                    style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                  >
+                    Apply All
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search inside preview -->
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <input
+                type="text"
+                id="preview-search-input"
+                placeholder="প্রিভিউ তালিকায় খুঁজুন (Search in preview)..."
+                oninput="filterPreviewTable()"
+                class="px-4 py-2 rounded-xl border text-xs sm:text-sm w-full sm:w-72 focus:outline-none focus:border-[#2D5A4C]"
+                style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+              />
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="clearPreviewWords()"
+                  class="font-bengali px-4 py-2 rounded-xl border text-xs font-bold hover:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  প্রিভিউ বাতিল (Cancel)
+                </button>
+                <button
+                  type="button"
+                  id="btn-confirm-save-all"
+                  onclick="confirmSaveAllPendingWords()"
+                  class="vw-btn-primary font-bengali px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm"
+                >
+                  <span>✅ ডাটাবেজে সেভ করুন (Save All to Database)</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview Table -->
+            <div class="overflow-x-auto rounded-2xl border" style="border-color: var(--border-subtle);">
+              <table class="w-full text-left text-xs sm:text-sm">
+                <thead>
+                  <tr style="background-color: var(--surface-sand); border-bottom: 1px solid var(--border-subtle); color: var(--ink-secondary);">
+                    <th class="p-3 font-bold w-12 text-center">#</th>
+                    <th class="p-3 font-bold">Word (ইংরেজি)</th>
+                    <th class="p-3 font-bold font-bengali">Meaning (বাংলা অর্থ)</th>
+                    <th class="p-3 font-bold">Example</th>
+                    <th class="p-3 font-bold">Level</th>
+                    <th class="p-3 font-bold">Status</th>
+                    <th class="p-3 font-bold w-16 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-table-body" class="divide-y" style="divide-color: var(--border-subtle); background-color: var(--surface-white);">
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Final Save Bottom Bar -->
+            <div class="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="border-color: var(--border-subtle);">
+              <p class="font-bengali text-xs" style="color: var(--ink-muted);">
+                সেভ বাটনে চাপ দিলে সবগুলো শব্দ লোকাল ডাটাবেজে যুক্ত হয়ে যাবে এবং সাথে সাথে Learn, Flashcards ও Games পেজে দৃশ্যমান হবে।
+              </p>
+              <button
+                type="button"
+                onclick="confirmSaveAllPendingWords()"
+                class="vw-btn-primary font-bengali px-8 py-3 rounded-2xl text-xs sm:text-sm font-bold shrink-0 flex items-center justify-center gap-2"
+              >
+                <span id="bottom-save-btn-text">সবকটি শব্দ সংরক্ষণ করুন (Save All)</span>
+                <span>&rarr;</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==============================================================
+           MANAGEMENT SECTION: MY ADDED CUSTOM WORDS
+      =============================================================== -->
+      <div id="my-words-section" class="rounded-3xl p-6 sm:p-8 border space-y-6" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b" style="border-color: var(--border-subtle);">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-bold uppercase tracking-wider px-3 py-0.5 rounded-full" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">
+                DATABASE INVENTORY
+              </span>
+              <span id="inventory-total-badge" class="font-bengali text-xs font-bold px-2.5 py-0.5 rounded-full" style="background-color: var(--surface-sand); color: var(--ink-primary);">
+                0টি শব্দ
+              </span>
+            </div>
+            <h3 class="font-editorial text-2xl font-bold" style="color: var(--ink-primary);">
+              My Custom Added Words
+            </h3>
+            <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+              আপনার পূর্বে যোগ করা সবকটি কাস্টম শব্দের তালিকা ও ব্যবস্থাপনা:
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onclick="exportCustomWordsToCsv()"
+              class="font-bengali px-3.5 py-2 rounded-xl border text-xs font-bold hover:border-[#2D5A4C] inline-flex items-center gap-1.5"
+              style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+            >
+              <span>📥 CSV হিসেবে এক্সপোর্ট</span>
+            </button>
+            <button
+              type="button"
+              onclick="handleClearAllCustomWords()"
+              class="font-bengali px-3.5 py-2 rounded-xl border text-xs font-bold hover:border-red-400 text-red-600"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+            >
+              সব ক্লিয়ার করুন (Clear All)
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onclick="filterMyWordsByLevel('all')"
+              class="filter-pill active font-bengali px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
+              data-level="all"
+            >
+              সবগুলো (All)
+            </button>
+            <button
+              type="button"
+              onclick="filterMyWordsByLevel('beginner')"
+              class="filter-pill font-bengali px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
+              data-level="beginner"
+            >
+              Beginner
+            </button>
+            <button
+              type="button"
+              onclick="filterMyWordsByLevel('intermediate')"
+              class="filter-pill font-bengali px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
+              data-level="intermediate"
+            >
+              Intermediate
+            </button>
+            <button
+              type="button"
+              onclick="filterMyWordsByLevel('advanced')"
+              class="filter-pill font-bengali px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
+              data-level="advanced"
+            >
+              Advanced
+            </button>
+            <button
+              type="button"
+              onclick="filterMyWordsByLevel('pro')"
+              class="filter-pill font-bengali px-3 py-1.5 rounded-xl text-xs font-bold border transition-all"
+              data-level="pro"
+            >
+              Pro
+            </button>
+          </div>
+
+          <input
+            type="text"
+            id="my-words-search-input"
+            placeholder="শব্দ খুঁজুন (Search words)..."
+            oninput="renderMyCustomWordsList()"
+            class="px-4 py-2 rounded-xl border text-xs sm:text-sm w-full sm:w-64 focus:outline-none focus:border-[#2D5A4C]"
+            style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+          />
+        </div>
+
+        <!-- Words Grid Container -->
+        <div id="my-words-container" class="pt-2"></div>
+      </div>
+
+    </div>
+    </main>
+
+    <!-- Shared Editorial Footer -->
+    <div id="app-footer"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    // State for Add Words page
+    let activeTab = 'single'; // 'single' | 'bulk' | 'upload'
+    let pendingWords = []; // Array of words awaiting final saving
+    let selectedUploadFile = null;
+    let myWordsFilterLevel = 'all';
+
+    // Support query param ?level=xxx
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramLevel = urlParams.get('level');
+    if (paramLevel && typeof CURRICULUM_DATA !== 'undefined' && CURRICULUM_DATA[paramLevel]) {
+      AppState.selectedLevel = paramLevel;
+      saveSetupToStorage(paramLevel, AppState.assessmentIndex);
+    }
+
+    /* -------------------------------------------------------------
+       TAB SWITCHING
+    -------------------------------------------------------------- */
+    function switchAddTab(tabId) {
+      activeTab = tabId;
+      ['single', 'bulk', 'upload'].forEach((t) => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const panel = document.getElementById(`panel-${t}`);
+        if (btn) {
+          if (t === tabId) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        }
+        if (panel) {
+          if (t === tabId) {
+            panel.classList.remove('hidden');
+            panel.classList.remove('vw-view-enter');
+            void panel.offsetWidth;
+            panel.classList.add('vw-view-enter');
+          } else {
+            panel.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    /* -------------------------------------------------------------
+       OPTION 1: ADD SINGLE WORD
+    -------------------------------------------------------------- */
+    function updateSinglePreview() {
+      const word = document.getElementById('single-word').value.trim() || 'Word';
+      const meaning = document.getElementById('single-meaning').value.trim() || 'বাংলা অর্থ এখানে প্রদর্শিত হবে';
+      const level = document.getElementById('single-level').value;
+      const pos = document.getElementById('single-pos').value;
+      const example = document.getElementById('single-example').value.trim() || `The teacher explained how to use "${word}" correctly.`;
+      const exampleBn = document.getElementById('single-example-bn').value.trim() || `শিক্ষক বুঝিয়ে দিলেন কীভাবে "${word}" সঠিকভাবে ব্যবহার করতে হয়।`;
+      const explanation = document.getElementById('single-explanation').value.trim() || `Contextual meaning and usage for ${word}.`;
+      const synonymsStr = document.getElementById('single-synonyms').value.trim();
+      const antonymsStr = document.getElementById('single-antonyms').value.trim();
+
+      const synList = synonymsStr ? synonymsStr.split(',').map((s) => s.trim()).filter(Boolean) : [];
+      const antList = antonymsStr ? antonymsStr.split(',').map((a) => a.trim()).filter(Boolean) : [];
+
+      const box = document.getElementById('single-live-preview-box');
+      if (!box) return;
+
+      const sid = registerSpeakText(word);
+      const exSid = registerSpeakText(example);
+
+      box.innerHTML = `
+        <article class="vw-word-card rounded-3xl p-5 sm:p-7 border" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Left Col -->
+            <div class="lg:col-span-6 space-y-3.5">
+              <div class="flex items-start gap-4">
+                <div class="vw-word-img-frame">
+                  ${getEditorialFallbackSvg(word)}
+                </div>
+
+                <div class="space-y-1.5 flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-editorial text-2xl sm:text-3xl font-bold truncate" style="color: var(--ink-primary);">
+                      ${escapeHtml(word)}
+                    </h3>
+                    <button
+                      type="button"
+                      onclick="speakById(${sid}, this)"
+                      class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0"
+                    >
+                      ${speakerIconSvg('w-3.5 h-3.5')}
+                      <span>Listen</span>
+                    </button>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <span class="badge-${level} text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+                      ${level.toUpperCase()}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background-color: var(--surface-sand); color: var(--ink-secondary);">
+                      ${escapeHtml(pos)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Meaning -->
+              <div class="rounded-2xl px-3.5 py-2 border" style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.2);">
+                <span class="font-bengali text-[10px] font-bold uppercase tracking-wider block" style="color: var(--accent-sage);">
+                  বাংলা অর্থ (Bengali Meaning)
+                </span>
+                <p class="font-bengali text-sm sm:text-base font-bold mt-0.5" style="color: var(--ink-primary);">
+                  ${escapeHtml(meaning)}
+                </p>
+              </div>
+
+              <p class="text-xs sm:text-sm" style="color: var(--ink-secondary);">
+                ${escapeHtml(explanation)}
+              </p>
+
+              <!-- Example -->
+              <div class="rounded-2xl p-4 border space-y-1" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--ink-muted);">EXAMPLE SENTENCE</span>
+                  <button type="button" onclick="speakById(${exSid}, this)" class="vw-speak-btn vw-speak-main px-2 py-0.5 rounded-full text-xs font-bold gap-1">
+                    ${speakerIconSvg('w-3 h-3')}<span>Listen</span>
+                  </button>
+                </div>
+                <p class="text-xs sm:text-sm font-medium" style="color: var(--ink-primary);">&ldquo;${escapeHtml(example)}&rdquo;</p>
+                <p class="font-bengali text-xs" style="color: var(--ink-secondary);">(${escapeHtml(exampleBn)})</p>
+              </div>
+            </div>
+
+            <!-- Right Col: Synonyms & Antonyms -->
+            <div class="lg:col-span-6 space-y-3">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider block mb-1" style="color: var(--accent-sage);">
+                  SYNONYMS (সমার্থক শব্দ)
+                </span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${
+                    synList.length
+                      ? synList.map((s) => `<span class="vw-pill-syn px-3 py-1 rounded-full text-xs font-semibold">${escapeHtml(s)}</span>`).join('')
+                      : '<span class="text-xs text-gray-400">কোনো সমার্থক শব্দ যোগ করা হয়নি</span>'
+                  }
+                </div>
+              </div>
+
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider block mb-1" style="color: var(--accent-terracotta);">
+                  ANTONYMS (বিপরীত শব্দ)
+                </span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${
+                    antList.length
+                      ? antList.map((a) => `<span class="vw-pill-ant px-3 py-1 rounded-full text-xs font-semibold">${escapeHtml(a)}</span>`).join('')
+                      : '<span class="text-xs text-gray-400">কোনো বিপরীত শব্দ যোগ করা হয়নি</span>'
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function handleSingleWordSubmit(e) {
+      e.preventDefault();
+      const wordInput = document.getElementById('single-word');
+      const meaningInput = document.getElementById('single-meaning');
+      const levelSelect = document.getElementById('single-level');
+      const posSelect = document.getElementById('single-pos');
+      const exInput = document.getElementById('single-example');
+      const exBnInput = document.getElementById('single-example-bn');
+      const expInput = document.getElementById('single-explanation');
+      const imgQInput = document.getElementById('single-image-query');
+      const synInput = document.getElementById('single-synonyms');
+      const antInput = document.getElementById('single-antonyms');
+
+      const word = wordInput.value.trim();
+      const meaning = meaningInput.value.trim();
+      if (!word || !meaning) {
+        showToast('অনুগ্রহ করে ইংরেজি শব্দ ও বাংলা অর্থ পূরণ করুন।');
+        return;
+      }
+
+      const synList = synInput.value.trim()
+        ? synInput.value.split(',').map((s) => ({ word: s.trim(), meaningBn: s.trim() })).filter((s) => s.word)
+        : [];
+      const antList = antInput.value.trim()
+        ? antInput.value.split(',').map((a) => ({ word: a.trim(), meaningBn: a.trim() })).filter((a) => a.word)
+        : [];
+
+      const newWordObj = {
+        word: word,
+        meaningBn: meaning,
+        level: levelSelect.value,
+        pos: posSelect.value,
+        example: exInput.value.trim() || `He used "${word}" naturally in conversation.`,
+        exampleBn: exBnInput.value.trim() || `তিনি কথপোকথনে সাবলীলভাবে "${word}" শব্দটি ব্যবহার করেন।`,
+        explanationEn: expInput.value.trim() || `Definition and contextual usage of "${word}".`,
+        imageQuery: imgQInput.value.trim() || word,
+        synonyms: synList,
+        antonyms: antList
+      };
+
+      const added = addCustomWord(newWordObj);
+      if (added) {
+        showToast(`"${added.word}" সফলভাবে ডাটাবেজে সংরক্ষণ করা হয়েছে! ✓`);
+        resetSingleForm();
+        refreshAllCustomWordCounts();
+        renderMyCustomWordsList();
+      }
+    }
+
+    function resetSingleForm() {
+      const form = document.getElementById('single-word-form');
+      if (form) form.reset();
+      updateSinglePreview();
+    }
+
+    /* -------------------------------------------------------------
+       OPTION 2: BULK PASTE 50–100 WORDS
+    -------------------------------------------------------------- */
+    function updateBulkWordCount() {
+      const text = (document.getElementById('bulk-textarea').value || '').trim();
+      const counter = document.getElementById('bulk-char-counter');
+      if (!counter) return;
+      if (!text) {
+        counter.textContent = '0 শব্দ সনাক্ত';
+        return;
+      }
+      const rawCount = parseRawInputIntoWordList(text).length;
+      counter.textContent = `${rawCount}টি শব্দ সনাক্ত`;
+    }
+
+    function clearBulkText() {
+      const el = document.getElementById('bulk-textarea');
+      if (el) el.value = '';
+      updateBulkWordCount();
+    }
+
+    // Comprehensive sample of 50 high-utility words across proficiency tiers
+    function loadSample50Words() {
+      const sample = [
+        "Eloquent - বাগ্মী, সুন্দর ভাষায় বক্তব্য প্রকাশকারী",
+        "Resilient - প্রতিকূলতা কাটিয়ে ওঠার মতো সহনশীল",
+        "Benevolent - পরোপকারী, দয়ালু ও সহমর্মী",
+        "Ubiquitous - সর্বব্যাপী, সর্বত্র বিরাজমান",
+        "Ephemeral - ক্ষণস্থায়ী, স্বল্প সময় স্থায়ী",
+        "Meticulous - অতি সতর্ক ও খুঁটিনাটি বিষয়ে যত্নশীল",
+        "Pragmatic - বাস্তববাদী ও বাস্তবসম্মত",
+        "Tenacious - দৃঢ়প্রতিজ্ঞ, সহজে হাল ছাড়ে না এমন",
+        "Candid - স্পষ্টভাষী, অকপট ও আন্তরিক",
+        "Lucid - সুস্পষ্ট, সহজে বোধগম্য ও প্রাঞ্জল",
+        "Vibrant - প্রাণবন্ত, সজীব ও স্পন্দনশীল",
+        "Frugal - মিতব্যয়ী, হিসাব করে খরচ করে এমন",
+        "Audacious - দুঃসাহসী, বেপরোয়া ও নির্ভীক",
+        "Astute - বিচক্ষণ, তীক্ষ্ণ বুদ্ধিসম্পন্ন",
+        "Empathy - সহমর্মিতা, অপরের অনুভূতি বোঝার ক্ষমতা",
+        "Ponder - গভীর চিন্তা করা, নিবিষ্ট মনে বিবেচনা করা",
+        "Scrutiny - পুঙ্খানুপুঙ্খ পরীক্ষা বা গভীর পর্যালোচনা",
+        "Exemplary - অনুকরণীয়, প্রশংসনীয় ও আদর্শস্থানীয়",
+        "Mitigate - প্রশমিত করা, তীব্রতা কমানো",
+        "Consensus - সর্বসম্মত সিদ্ধান্ত বা যৌথ ঐকমত্য",
+        "Ambiguous - দ্ব্যর্থবোধক, অস্পষ্ট ও বিভ্রান্তিকর",
+        "Zeal - প্রবল আগ্রহ, উদ্দীপনা ও একনিষ্ঠতা",
+        "Nostalgia - স্মৃতিবেদনা, অতীতের মধুর স্মৃতি রোমন্থন",
+        "Spontaneous - স্বতঃস্ফূর্ত, তাৎক্ষণিক উদ্ভূত",
+        "Affluent - প্রাচুর্যময়, সম্পদশালী ও ধনী",
+        "Coherent - সুসংগত, যুক্তিপূর্ণ ও সুবিন্যস্ত",
+        "Diligence - অধ্যাবসায়, একাগ্র প্রচেষ্টা",
+        "Integrity - সততা, চারিত্রিক দৃঢ়তা ও নীতিপরায়ণতা",
+        "Oblivious - অসচেতন, বেখবর ও অন্যমনস্ক",
+        "Pinnacle - চূড়ান্ত শিখর, সাফল্যের সর্বোচ্চ পর্যায়",
+        "Altruistic - নিঃস্বার্থ, পরহিতৈষী",
+        "Profound - সুদূরপ্রসারী, গভীর ও অর্থবহ",
+        "Brevity - সংক্ষিপ্ততা, অল্প কথায় প্রকাশ",
+        "Resolute - সংকল্পবদ্ধ, অবিচল ও স্থিরচিত্ত",
+        "Vindicate - নির্দোষ প্রমাণ করা, ন্যায্যতা প্রতিষ্ঠা করা",
+        "Equanimity - মানসিক স্থৈর্য, অবিচল ভাব",
+        "Prudent - দূরদর্শী, সতর্ক ও সুবিবেচক",
+        "Reverence - গভীর শ্রদ্ধা, ভক্তি ও সম্মান",
+        "Stalwart - বিশ্বস্ত ও দৃঢ় সমর্থক",
+        "Voracious - অতি লোভী বা যেকোনো বিষয়ের প্রতি অতি ক্ষুধার্ত",
+        "Wary - সতর্ক, সন্দিহান ও হুঁশিয়ার",
+        "Yielding - নমনীয়, সহজে বশ্যতা স্বীকার করে এমন",
+        "Zenith - উন্নতির চরম শিখর বা সর্বোচ্চ বিন্দু",
+        "Acumen - প্রখর সূক্ষ্ম বিচারবুদ্ধি",
+        "Bolster - জোরদার করা, সমর্থন জোগানো",
+        "Clandestine - গোপনে বা গোপনে সম্পাদিত",
+        "Discreet - সংযত, সাবধানী ও গোপনীয়তা রক্ষাকারী",
+        "Enigma - ধাঁধা, রহস্যময় বা দুর্বোধ্য বিষয়",
+        "Fortitude - মানসিক সাহস ও ধৈর্যশীলতা",
+        "Gregarious - মিশুক, সামাজিক ও সঙ্গীপ্রিয়"
+      ];
+
+      const textarea = document.getElementById('bulk-textarea');
+      if (textarea) {
+        textarea.value = sample.join('\n');
+        updateBulkWordCount();
+        showToast('৫০টি বাছাইকৃত নমুনা শব্দ টেক্সটবক্সে লোড হয়েছে! এবার Parse & Preview বাটনে চাপুন।');
+      }
+    }
+
+    // Flexible Parser: handles commas, newlines, hyphens, colons, pipes, and full CSV lines
+    function parseRawInputIntoWordList(rawText, defaultLevel = 'intermediate') {
+      if (!rawText || !rawText.trim()) return [];
+      const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const result = [];
+
+      lines.forEach((line) => {
+        // If line contains multiple comma-separated words with NO dashes/colons, split by comma
+        if (line.includes(',') && !line.includes('-') && !line.includes(':') && !line.includes('|')) {
+          const parts = line.split(',').map((p) => p.trim()).filter(Boolean);
+          parts.forEach((p) => {
+            if (p && /^[a-zA-Z\s'-]+$/.test(p)) {
+              result.push({
+                word: p,
+                meaningBn: 'বাংলা অর্থ শীঘ্রই যুক্ত হবে',
+                level: defaultLevel,
+                example: `The word "${p}" was added from bulk list.`
+              });
+            } else if (p) {
+              result.push({
+                word: p,
+                meaningBn: 'বাংলা অর্থ শীঘ্রই যুক্ত হবে',
+                level: defaultLevel,
+                example: `The word "${p}" was added from bulk list.`
+              });
+            }
+          });
+          return;
+        }
+
+        // Check delimiters: - or : or |
+        const sepMatch = line.match(/^([^:\-\|]+)\s*[:\-\|]\s*(.+)$/);
+        if (sepMatch) {
+          const wordPart = sepMatch[1].trim();
+          const remainder = sepMatch[2].trim();
+          result.push({
+            word: wordPart,
+            meaningBn: remainder,
+            level: defaultLevel,
+            example: `She applied "${wordPart}" effectively in her essay.`
+          });
+          return;
+        }
+
+        // Check CSV line: Word, Meaning, Example, Level
+        const csvParts = line.split(',').map((s) => s.trim());
+        if (csvParts.length >= 2) {
+          const w = csvParts[0];
+          const m = csvParts[1];
+          const ex = csvParts[2] || `Example sentence for "${w}".`;
+          const lvl = (csvParts[3] && ['beginner', 'intermediate', 'advanced', 'pro'].includes(csvParts[3].toLowerCase()))
+            ? csvParts[3].toLowerCase()
+            : defaultLevel;
+          result.push({
+            word: w,
+            meaningBn: m,
+            example: ex,
+            level: lvl
+          });
+          return;
+        }
+
+        // Single word on the line
+        result.push({
+          word: line,
+          meaningBn: 'বাংলা অর্থ শীঘ্রই যুক্ত হবে',
+          level: defaultLevel,
+          example: `Example sentence for "${line}".`
+        });
+      });
+
+      // Filter and clean word entries
+      return result
+        .filter((item) => item && item.word && item.word.length >= 2)
+        .map((item) => ({
+          ...item,
+          word: item.word.charAt(0).toUpperCase() + item.word.slice(1).trim(),
+          isDuplicate: isWordDuplicate(item.word)
+        }));
+    }
+
+    function parseBulkTextAndPreview() {
+      const rawText = document.getElementById('bulk-textarea').value.trim();
+      const defaultLvl = document.getElementById('bulk-default-level').value;
+      if (!rawText) {
+        showToast('অনুগ্রহ করে আগে কিছু শব্দ পেস্ট করুন।');
+        return;
+      }
+
+      const parsed = parseRawInputIntoWordList(rawText, defaultLvl);
+      if (!parsed.length) {
+        showToast('কোনো সঠিক শব্দ সনাক্ত করা যায়নি। অনুগ্রহ করে ফরম্যাট চেক করুন।');
+        return;
+      }
+
+      setPendingWords(parsed);
+      showToast(`${parsed.length}টি শব্দ প্রিভিউয়ের জন্য প্রস্তুত হয়েছে! নিচে পর্যালোচনা করুন। ✓`);
+    }
+
+    /* -------------------------------------------------------------
+       OPTION 3: FILE UPLOAD (EXCEL & PDF)
+    -------------------------------------------------------------- */
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const box = document.getElementById('file-drop-zone');
+      if (box) box.style.borderColor = 'var(--accent-sage)';
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const box = document.getElementById('file-drop-zone');
+      if (box) box.style.borderColor = 'var(--border-hover)';
+    }
+
+    function handleFileDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleDragLeave(e);
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        setSelectedFile(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFileInputChange(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        setSelectedFile(e.target.files[0]);
+      }
+    }
+
+    function setSelectedFile(file) {
+      if (!file) return;
+      const validExtensions = ['.xlsx', '.xls', '.csv', '.pdf'];
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validExtensions.includes(ext)) {
+        showToast('অনুগ্রহ করে সমর্থিত ফাইল (.xlsx, .xls, .csv, .pdf) নির্বাচন করুন।');
+        return;
+      }
+
+      selectedUploadFile = file;
+
+      const infoBox = document.getElementById('selected-file-info');
+      const nameEl = document.getElementById('file-name-text');
+      const sizeEl = document.getElementById('file-size-text');
+      const iconEl = document.getElementById('file-icon-badge');
+      const btn = document.getElementById('btn-process-file');
+
+      if (infoBox && nameEl && sizeEl) {
+        infoBox.classList.remove('hidden');
+        nameEl.textContent = file.name;
+        sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB &bull; ${file.type || ext}`;
+        if (iconEl) {
+          iconEl.textContent = ext === '.pdf' ? '📄' : '📊';
+        }
+      }
+      if (btn) btn.removeAttribute('disabled');
+      showToast(`ফাইল "${file.name}" নির্বাচিত হয়েছে। এবার প্রসেস বাটনে চাপুন।`);
+    }
+
+    function removeSelectedFile() {
+      selectedUploadFile = null;
+      const input = document.getElementById('file-input');
+      if (input) input.value = '';
+      const infoBox = document.getElementById('selected-file-info');
+      if (infoBox) infoBox.classList.add('hidden');
+      const btn = document.getElementById('btn-process-file');
+      if (btn) btn.setAttribute('disabled', 'true');
+    }
+
+    async function processSelectedFile() {
+      if (!selectedUploadFile) {
+        showToast('অনুগ্রহ করে প্রথমে একটি ফাইল নির্বাচন করুন।');
+        return;
+      }
+
+      const file = selectedUploadFile;
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      const defaultLvl = document.getElementById('upload-default-level').value;
+      const spinner = document.getElementById('file-parse-spinner');
+      if (spinner) spinner.classList.remove('hidden');
+
+      try {
+        let extractedWords = [];
+        if (ext === '.xlsx' || ext === '.xls' || ext === '.csv') {
+          extractedWords = await parseExcelOrCsvFile(file, defaultLvl);
+        } else if (ext === '.pdf') {
+          extractedWords = await parsePdfFile(file, defaultLvl);
+        }
+
+        if (spinner) spinner.classList.add('hidden');
+
+        if (!extractedWords.length) {
+          showToast('ফাইল থেকে কোনো শব্দ সনাক্ত করা সম্ভব হয়নি। অনুগ্রহ করে ফাইলটির কলাম বা লেখা চেক করুন।');
+          return;
+        }
+
+        setPendingWords(extractedWords);
+        showToast(`ফাইল থেকে সফলভাবে ${extractedWords.length}টি শব্দ প্রসেস করা হয়েছে! ✓`);
+      } catch (err) {
+        if (spinner) spinner.classList.add('hidden');
+        console.error('File parsing error:', err);
+        showToast('ফাইল পড়ার সময় একটি ত্রুটি ঘটেছে: ' + (err.message || 'Error'));
+      }
+    }
+
+    // SheetJS Excel / CSV Parser
+    function parseExcelOrCsvFile(file, defaultLevel) {
+      return new Promise((resolve, reject) => {
+        // Fallback for CSV if SheetJS isn't loaded
+        if (!window.XLSX && file.name.endsWith('.csv')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const text = e.target.result;
+            const parsed = parseRawInputIntoWordList(text, defaultLevel);
+            resolve(parsed);
+          };
+          reader.onerror = reject;
+          reader.readAsText(file);
+          return;
+        }
+
+        if (!window.XLSX) {
+          reject(new Error('SheetJS library is not available. Please verify internet connection.'));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheet];
+            const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            if (!rawRows || !rawRows.length) {
+              resolve([]);
+              return;
+            }
+
+            // Identify header row if available
+            let headerIdx = -1;
+            let colMap = { word: 0, meaning: 1, example: 2, level: 3, pos: 4 };
+
+            for (let i = 0; i < Math.min(5, rawRows.length); i++) {
+              const row = rawRows[i].map((c) => String(c || '').toLowerCase().trim());
+              const wIdx = row.findIndex((c) => c.includes('word') || c.includes('vocab') || c.includes('english'));
+              if (wIdx !== -1) {
+                headerIdx = i;
+                colMap.word = wIdx;
+                const mIdx = row.findIndex((c) => c.includes('mean') || c.includes('bangla') || c.includes('bengali') || c.includes('ortho'));
+                if (mIdx !== -1) colMap.meaning = mIdx;
+                const eIdx = row.findIndex((c) => c.includes('exam') || c.includes('sent'));
+                if (eIdx !== -1) colMap.example = eIdx;
+                const lIdx = row.findIndex((c) => c.includes('level') || c.includes('tier'));
+                if (lIdx !== -1) colMap.level = lIdx;
+                break;
+              }
+            }
+
+            const dataRows = headerIdx !== -1 ? rawRows.slice(headerIdx + 1) : rawRows;
+            const results = [];
+
+            dataRows.forEach((row) => {
+              if (!row || !row.length) return;
+              const w = String(row[colMap.word] || '').trim();
+              if (!w || w.length < 2) return;
+
+              const m = String(row[colMap.meaning] || 'বাংলা অর্থ শীঘ্রই যুক্ত হবে').trim();
+              const ex = String(row[colMap.example] || `Example sentence for "${w}".`).trim();
+              let lvl = String(row[colMap.level] || defaultLevel).toLowerCase().trim();
+              if (!['beginner', 'intermediate', 'advanced', 'pro'].includes(lvl)) {
+                lvl = defaultLevel;
+              }
+
+              results.push({
+                word: w.charAt(0).toUpperCase() + w.slice(1),
+                meaningBn: m,
+                example: ex,
+                level: lvl,
+                isDuplicate: isWordDuplicate(w)
+              });
+            });
+
+            resolve(results);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    // PDF.js Text Extractor & Parser
+    function parsePdfFile(file, defaultLevel) {
+      return new Promise((resolve, reject) => {
+        if (!window.pdfjsLib) {
+          reject(new Error('PDF.js library is not available. Please verify internet connection.'));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const typedarray = new Uint8Array(e.target.result);
+            const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+            let combinedText = '';
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              const page = await pdf.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              const pageStrings = textContent.items.map((item) => item.str);
+              combinedText += pageStrings.join(' ') + '\n';
+            }
+
+            const parsedWords = parseRawInputIntoWordList(combinedText, defaultLevel);
+            resolve(parsedWords);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function downloadSampleCsvTemplate() {
+      const headers = ['Word', 'MeaningBn', 'ExampleEn', 'ExampleBn', 'Level', 'PartOfSpeech', 'Synonyms', 'Antonyms'];
+      const sampleRows = [
+        ['Eloquent', 'বাগ্মী, আকর্ষণীয়ভাবে বক্তব্য প্রকাশকারী', 'The speaker delivered an eloquent address.', 'বক্তা একটি বাগ্মী ভাষণ দিয়েছিলেন।', 'intermediate', 'Adjective', 'Fluent, Articulate', 'Inarticulate'],
+        ['Resilient', 'সহনশীল, প্রতিকূলতা কাটিয়ে ওঠার মতো', 'She proved resilient in difficult times.', 'কঠিন সময়ে তিনি সহনশীলতার প্রমাণ দেন।', 'intermediate', 'Adjective', 'Tough, Flexible', 'Fragile'],
+        ['Benevolent', 'পরোপকারী, দয়ালু ও সহমর্মী', 'The benevolent leader supported all families.', 'পরোপকারী নেতা সব পরিবারকে সাহায্য করেন।', 'advanced', 'Adjective', 'Kind, Generous', 'Malevolent'],
+        ['Ubiquitous', 'সর্বব্যাপী, সর্বত্র বিরাজমান', 'Smartphones have become ubiquitous today.', 'স্মার্টফোন আজ সর্বত্র বিরাজমান।', 'advanced', 'Adjective', 'Omnipresent, Universal', 'Rare']
+      ];
+
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers, ...sampleRows].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'vocabulary_world_template.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('নমুনা CSV টেমপ্লেট ডাউনলোড হয়েছে! ✓');
+    }
+
+    /* -------------------------------------------------------------
+       SHARED PREVIEW & CONFIRMATION LOGIC
+    -------------------------------------------------------------- */
+    function setPendingWords(wordsList) {
+      pendingWords = wordsList.map((w, idx) => ({
+        id: `pending-${idx}-${Date.now()}`,
+        word: w.word,
+        meaningBn: w.meaningBn || 'বাংলা অর্থ শীঘ্রই যুক্ত হবে',
+        example: w.example || `The student used "${w.word}" in writing.`,
+        level: w.level || 'intermediate',
+        pos: w.pos || 'Word',
+        isDuplicate: isWordDuplicate(w.word)
+      }));
+
+      const previewSection = document.getElementById('preview-section');
+      if (previewSection) {
+        previewSection.classList.remove('hidden');
+        previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      renderPreviewTable();
+    }
+
+    function clearPreviewWords() {
+      pendingWords = [];
+      const previewSection = document.getElementById('preview-section');
+      if (previewSection) previewSection.classList.add('hidden');
+    }
+
+    function renderPreviewTable() {
+      const tbody = document.getElementById('preview-table-body');
+      const countBadge = document.getElementById('preview-count-badge');
+      const dupBadge = document.getElementById('preview-duplicate-badge');
+      const bottomText = document.getElementById('bottom-save-btn-text');
+      if (!tbody) return;
+
+      const filterTerm = (document.getElementById('preview-search-input')?.value || '').toLowerCase().trim();
+      const filtered = pendingWords.filter((w) => !filterTerm || w.word.toLowerCase().includes(filterTerm) || w.meaningBn.includes(filterTerm));
+
+      const duplicatesCount = pendingWords.filter((w) => w.isDuplicate).length;
+
+      if (countBadge) {
+        countBadge.textContent = `${pendingWords.length} Words Ready (প্রস্তুত)`;
+      }
+
+      if (dupBadge) {
+        if (duplicatesCount > 0) {
+          dupBadge.classList.remove('hidden');
+          dupBadge.textContent = `${duplicatesCount}টি শব্দ ইতিমধ্যে ডাটাবেজে রয়েছে (আপডেট হবে)`;
+        } else {
+          dupBadge.classList.add('hidden');
+        }
+      }
+
+      if (bottomText) {
+        bottomText.textContent = `সবকটি (${pendingWords.length}টি) শব্দ সংরক্ষণ করুন (Save All)`;
+      }
+
+      if (!filtered.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="p-6 text-center font-bengali text-gray-400">
+              কোনো শব্দ পাওয়া যায়নি
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered
+        .map((item, idx) => {
+          return `
+            <tr class="hover:bg-[#FAF8F5] transition-colors ${item.isDuplicate ? 'bg-amber-50/40' : ''}">
+              <td class="p-3 text-center font-mono text-xs text-gray-400">${idx + 1}</td>
+              <td class="p-3 font-editorial font-bold text-sm" style="color: var(--ink-primary);">
+                ${escapeHtml(item.word)}
+              </td>
+              <td class="p-3 font-bengali text-xs sm:text-sm font-semibold" style="color: var(--accent-sage);">
+                <input
+                  type="text"
+                  value="${escapeHtml(item.meaningBn)}"
+                  onchange="updatePendingWordField('${item.id}', 'meaningBn', this.value)"
+                  class="w-full px-2 py-1 rounded-lg border text-xs sm:text-sm font-bengali focus:outline-none focus:border-[#2D5A4C]"
+                  style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+                />
+              </td>
+              <td class="p-3 text-xs text-gray-600 max-w-xs truncate">
+                ${escapeHtml(item.example)}
+              </td>
+              <td class="p-3">
+                <select
+                  onchange="updatePendingWordField('${item.id}', 'level', this.value)"
+                  class="px-2 py-1 rounded-lg border text-xs font-bold focus:outline-none"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  <option value="beginner" ${item.level === 'beginner' ? 'selected' : ''}>Beginner</option>
+                  <option value="intermediate" ${item.level === 'intermediate' ? 'selected' : ''}>Intermediate</option>
+                  <option value="advanced" ${item.level === 'advanced' ? 'selected' : ''}>Advanced</option>
+                  <option value="pro" ${item.level === 'pro' ? 'selected' : ''}>Pro</option>
+                </select>
+              </td>
+              <td class="p-3">
+                ${
+                  item.isDuplicate
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Exists (Update)</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">New Word</span>`
+                }
+              </td>
+              <td class="p-3 text-center">
+                <button
+                  type="button"
+                  onclick="removePendingWord('${item.id}')"
+                  title="Remove this word"
+                  class="w-7 h-7 rounded-lg border text-xs font-bold text-red-500 hover:bg-red-50 transition-colors"
+                  style="border-color: var(--border-subtle);"
+                >
+                  &times;
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+
+    function updatePendingWordField(id, field, value) {
+      const found = pendingWords.find((w) => w.id === id);
+      if (found) {
+        found[field] = value;
+      }
+    }
+
+    function removePendingWord(id) {
+      pendingWords = pendingWords.filter((w) => w.id !== id);
+      if (!pendingWords.length) {
+        clearPreviewWords();
+      } else {
+        renderPreviewTable();
+      }
+    }
+
+    function filterPreviewTable() {
+      renderPreviewTable();
+    }
+
+    function applyBatchLevelToPreview() {
+      const selected = document.getElementById('batch-level-select').value;
+      pendingWords.forEach((w) => (w.level = selected));
+      renderPreviewTable();
+      showToast(`প্রিভিউয়ের সবকটি শব্দের লেভেল "${selected.toUpperCase()}" এ পরিবর্তন করা হয়েছে!`);
+    }
+
+    function confirmSaveAllPendingWords() {
+      if (!pendingWords.length) return;
+
+      const added = addCustomWordsBulk(pendingWords);
+      showToast(`অভিনন্দন! মোট ${added}টি নতুন শব্দ আপনার শব্দভান্ডারে সেভ করা হয়েছে! ✓`);
+      clearPreviewWords();
+      refreshAllCustomWordCounts();
+      renderMyCustomWordsList();
+
+      const mySec = document.getElementById('my-words-section');
+      if (mySec) {
+        mySec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    /* -------------------------------------------------------------
+       MANAGEMENT: MY CUSTOM WORDS
+    -------------------------------------------------------------- */
+    function filterMyWordsByLevel(lvl) {
+      myWordsFilterLevel = lvl;
+      document.querySelectorAll('.filter-pill').forEach((btn) => {
+        if (btn.dataset.level === lvl) {
+          btn.classList.add('active', 'bg-[#2D5A4C]', 'text-white');
+          btn.classList.remove('bg-[#FAF8F5]');
+        } else {
+          btn.classList.remove('active', 'bg-[#2D5A4C]', 'text-white');
+          btn.classList.add('bg-[#FAF8F5]');
+        }
+      });
+      renderMyCustomWordsList();
+    }
+
+    function renderMyCustomWordsList() {
+      const container = document.getElementById('my-words-container');
+      const totalBadge = document.getElementById('inventory-total-badge');
+      if (!container) return;
+
+      const allCustom = getCustomWords();
+      if (totalBadge) totalBadge.textContent = `${allCustom.length}টি শব্দ`;
+
+      const searchTerm = (document.getElementById('my-words-search-input')?.value || '').toLowerCase().trim();
+
+      const filtered = allCustom.filter((w) => {
+        const matchesLevel = myWordsFilterLevel === 'all' || w.level === myWordsFilterLevel;
+        const matchesSearch = !searchTerm || w.word.toLowerCase().includes(searchTerm) || w.meaningBn.includes(searchTerm);
+        return matchesLevel && matchesSearch;
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="rounded-2xl p-9 border text-center space-y-2" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+            <p class="font-editorial text-lg font-bold" style="color: var(--ink-muted);">
+              ${allCustom.length === 0 ? 'No Custom Words Yet' : 'No Matching Words Found'}
+            </p>
+            <p class="font-bengali text-xs text-gray-500">
+              ${
+                allCustom.length === 0
+                  ? 'ওপরের ৩টি পদ্ধতির যেকোনো একটি ব্যবহার করে আপনার শব্দভান্ডারে প্রথম শব্দটি যোগ করুন!'
+                  : 'অনুসন্ধানের সাথে কোনো শব্দ মেলেনি। অন্য শব্দ দিয়ে চেষ্টা করুন।'
+              }
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${filtered
+            .map((item) => {
+              const sid = registerSpeakText(item.word);
+              return `
+                <div class="vw-word-card rounded-2xl p-4 border flex flex-col justify-between gap-3 shadow-xs" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+                  <div>
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                      <span class="badge-${item.level} text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+                        ${item.level.toUpperCase()}
+                      </span>
+                      <button
+                        type="button"
+                        onclick="handleDeleteCustomWord('${item.id}', '${escapeHtml(item.word)}')"
+                        title="Delete word"
+                        class="text-gray-400 hover:text-red-600 transition-colors text-xs font-bold p-1"
+                      >
+                        Delete &times;
+                      </button>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-1">
+                      <h4 class="font-editorial text-lg sm:text-xl font-bold truncate" style="color: var(--ink-primary);">
+                        ${escapeHtml(item.word)}
+                      </h4>
+                      <button
+                        type="button"
+                        onclick="speakById(${sid}, this)"
+                        class="vw-speak-btn vw-speak-main w-6 h-6 rounded-full text-xs shrink-0"
+                      >
+                        ${speakerIconSvg('w-3 h-3')}
+                      </button>
+                    </div>
+
+                    <p class="font-bengali text-sm font-bold mt-1" style="color: var(--accent-sage);">
+                      ${escapeHtml(item.meaningBn)}
+                    </p>
+
+                    <p class="text-xs text-gray-600 mt-1 italic">
+                      &ldquo;${escapeHtml(item.example)}&rdquo;
+                    </p>
+                  </div>
+
+                  <div class="pt-2 border-t flex items-center justify-between text-[11px]" style="border-color: var(--border-subtle); color: var(--ink-muted);">
+                    <span>${escapeHtml(item.pos || 'Word')}</span>
+                    <a
+                      href="learn.html?level=${item.level}"
+                      class="text-[#2D5A4C] font-semibold hover:underline"
+                    >
+                      View in Learn &rarr;
+                    </a>
+                  </div>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
+      `;
+    }
+
+    function handleDeleteCustomWord(wordId, wordName) {
+      if (!confirm(`আপনি কি "${wordName}" শব্দটি আপনার শব্দভান্ডার থেকে মুছে ফেলতে চান?`)) return;
+      deleteCustomWord(wordId);
+      showToast(`"${wordName}" মুছে ফেলা হয়েছে।`);
+      refreshAllCustomWordCounts();
+      renderMyCustomWordsList();
+    }
+
+    function handleClearAllCustomWords() {
+      const count = getCustomWords().length;
+      if (count === 0) {
+        showToast('কোনো কাস্টম শব্দ নেই।');
+        return;
+      }
+      if (!confirm(`সতর্কতা! আপনি কি আপনার যোগ করা সবকটি (${count}টি) কাস্টম শব্দ স্থায়ীভাবে মুছে ফেলতে চান?`)) return;
+      clearAllCustomWords();
+      showToast('সবকটি কাস্টম শব্দ সফলভাবে মুছে ফেলা হয়েছে।');
+      refreshAllCustomWordCounts();
+      renderMyCustomWordsList();
+    }
+
+    function exportCustomWordsToCsv() {
+      const customList = getCustomWords();
+      if (!customList.length) {
+        showToast('এক্সপোর্ট করার মতো কোনো কাস্টম শব্দ পাওয়া যায়নি।');
+        return;
+      }
+
+      const headers = ['Word', 'MeaningBn', 'ExampleEn', 'ExampleBn', 'Level', 'PartOfSpeech', 'AddedAt'];
+      const rows = customList.map((item) => [
+        item.word,
+        item.meaningBn,
+        item.example,
+        item.exampleBn || '',
+        item.level,
+        item.pos || '',
+        item.addedAt || ''
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `vocabulary_world_custom_words_${getTodayDateKey()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`${customList.length}টি কাস্টম শব্দ CSV ফাইলে এক্সপোর্ট হয়েছে! ✓`);
+    }
+
+    function refreshAllCustomWordCounts() {
+      const customList = getCustomWords();
+      const badge = document.getElementById('subbar-custom-count-badge');
+      if (badge) {
+        badge.textContent = `আমার নিজস্ব শব্দ: ${customList.length} টি`;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       INITIALIZATION
+    -------------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAppHeader('add-words');
+      renderAppFooter();
+      updateSinglePreview();
+      refreshAllCustomWordCounts();
+      renderMyCustomWordsList();
+      filterMyWordsByLevel('all');
+    });
+  </script>
+</body>
+</html>

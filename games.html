@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Games — Vocabulary World</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Fraunces, Plus Jakarta Sans, Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Shared Editorial Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Dark Mode Zero-Flash Initializer -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('vw_theme');
+        if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Shared Sidebar & Mobile Top Navigation -->
+  <div id="app-header"></div>
+
+  <!-- Main Content Layout (Adjusts margin based on sidebar state) -->
+  <div class="vw-main-layout flex-1 flex flex-col min-w-0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-9">
+      <div id="games-page-mount" class="vw-panel-reveal"></div>
+    </main>
+
+    <!-- Shared Editorial Footer -->
+    <div id="app-footer"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    const GameState = {
+      mode: 'matching', // 'matching' | 'missing' | 'guess' | 'scramble'
+      score: 0,
+      streak: 0,
+      
+      // Matching
+      matchPairs: [],
+      matchRightList: [],
+      matchSelectedLeft: null,
+      matchMatchedIds: [],
+      matchWrongPair: null,
+      justMatchedId: null,
+
+      // Missing letters
+      mlDeck: [],
+      mlIndex: 0,
+      mlMaskedIndices: [],
+      mlInputs: {},
+      mlFeedback: null,
+      mlHintUsed: false,
+
+      // Guess meaning
+      gmDeck: [],
+      gmIndex: 0,
+      gmOptions: [],
+      gmSelected: null,
+
+      // Scramble
+      wsDeck: [],
+      wsIndex: 0,
+      wsTiles: [],
+      wsChosenIds: [],
+      wsFeedback: null,
+      wsHintShown: false
+    };
+
+    // Support query param ?level=xxx
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramLevel = urlParams.get('level');
+    if (paramLevel && typeof CURRICULUM_DATA !== 'undefined' && CURRICULUM_DATA[paramLevel]) {
+      AppState.selectedLevel = paramLevel;
+      saveSetupToStorage(paramLevel, AppState.assessmentIndex);
+    }
+
+    function switchLevel(newLevel) {
+      if (!CURRICULUM_DATA[newLevel]) return;
+      PronunciationEngine.stopAll();
+      AppState.selectedLevel = newLevel;
+      saveSetupToStorage(newLevel, AppState.assessmentIndex);
+      initAllGames();
+      renderAppHeader('games');
+      const mount = document.getElementById('games-page-mount');
+      if (mount) {
+        mount.classList.remove('vw-view-enter');
+        void mount.offsetWidth;
+        mount.classList.add('vw-view-enter');
+      }
+      renderGamesPage();
+    }
+
+    function switchGameMode(mode) {
+      PronunciationEngine.stopAll();
+      GameState.mode = mode;
+      const mount = document.getElementById('games-page-mount');
+      if (mount) {
+        mount.classList.remove('vw-view-enter');
+        void mount.offsetWidth;
+        mount.classList.add('vw-view-enter');
+      }
+      renderGamesPage();
+    }
+
+    function recordScore(points, isQuiz = false) {
+      GameState.score += points;
+      GameState.streak += 1;
+      awardGamePoints(points, isQuiz);
+    }
+
+    function resetStreak() {
+      GameState.streak = 0;
+    }
+
+    /* -------------------------------------------------------------
+       GAME 1: WORD MATCHING
+    -------------------------------------------------------------- */
+    function setupMatchingRound() {
+      const deck = getLevelPracticeDeck(AppState.selectedLevel);
+      const chosenFive = shuffleArray(deck).slice(0, 5);
+      GameState.matchPairs = chosenFive;
+      GameState.matchRightList = shuffleArray(chosenFive);
+      GameState.matchSelectedLeft = null;
+      GameState.matchMatchedIds = [];
+      GameState.matchWrongPair = null;
+      GameState.justMatchedId = null;
+    }
+
+    function selectMatchLeft(wordId) {
+      if (GameState.matchMatchedIds.includes(wordId)) return;
+      GameState.matchSelectedLeft = wordId;
+      GameState.matchWrongPair = null;
+      renderGamesPage();
+    }
+
+    function selectMatchRight(rightWordId) {
+      const leftId = GameState.matchSelectedLeft;
+      if (!leftId || GameState.matchMatchedIds.includes(rightWordId)) return;
+
+      if (leftId === rightWordId) {
+        GameState.matchMatchedIds.push(leftId);
+        GameState.justMatchedId = leftId;
+        GameState.matchSelectedLeft = null;
+        GameState.matchWrongPair = null;
+        recordScore(10, false);
+      } else {
+        GameState.justMatchedId = null;
+        GameState.matchWrongPair = { left: leftId, right: rightWordId };
+        resetStreak();
+      }
+      renderGamesPage();
+    }
+
+    /* -------------------------------------------------------------
+       GAME 2: MISSING LETTERS
+    -------------------------------------------------------------- */
+    function setupMissingLettersDeck() {
+      const deck = shuffleArray(getLevelPracticeDeck(AppState.selectedLevel));
+      GameState.mlDeck = deck;
+      GameState.mlIndex = 0;
+      prepareCurrentMissingWord();
+    }
+
+    function prepareCurrentMissingWord() {
+      const item = GameState.mlDeck[GameState.mlIndex];
+      if (!item) return;
+      const letters = item.word.split('');
+      const candidateIndices = letters.map((_, idx) => idx).filter((idx) => idx > 0);
+      const hideCount = Math.min(candidateIndices.length, Math.max(2, Math.floor(letters.length * 0.4)));
+      const masked = shuffleArray(candidateIndices).slice(0, hideCount).sort((a, b) => a - b);
+
+      GameState.mlMaskedIndices = masked;
+      GameState.mlInputs = {};
+      GameState.mlFeedback = null;
+      GameState.mlHintUsed = false;
+    }
+
+    function handleMissingLetterInput(idx, rawVal) {
+      const clean = String(rawVal || '').replace(/[^a-zA-Z]/g, '').slice(-1).toUpperCase();
+      GameState.mlInputs[idx] = clean;
+      GameState.mlFeedback = null;
+
+      if (clean) {
+        const masked = GameState.mlMaskedIndices;
+        const pos = masked.indexOf(idx);
+        if (pos !== -1 && pos + 1 < masked.length) {
+          const nextInput = document.getElementById(`ml-box-${masked[pos + 1]}`);
+          if (nextInput) nextInput.focus();
+        }
+      }
+    }
+
+    function clickMissingLetterTile(char) {
+      const masked = GameState.mlMaskedIndices;
+      const targetIdx = masked.find((idx) => !GameState.mlInputs[idx]);
+      if (targetIdx === undefined) return;
+      GameState.mlInputs[targetIdx] = char.toUpperCase();
+      GameState.mlFeedback = null;
+      renderGamesPage();
+    }
+
+    function clearMissingLetters() {
+      GameState.mlInputs = {};
+      GameState.mlFeedback = null;
+      renderGamesPage();
+    }
+
+    function revealMissingHint() {
+      const item = GameState.mlDeck[GameState.mlIndex];
+      const masked = GameState.mlMaskedIndices;
+      if (!item || !masked.length) return;
+      const targetIdx = masked.find((idx) => (GameState.mlInputs[idx] || '').toUpperCase() !== item.word[idx].toUpperCase());
+      if (targetIdx !== undefined) {
+        GameState.mlInputs[targetIdx] = item.word[targetIdx].toUpperCase();
+        GameState.mlHintUsed = true;
+        GameState.mlFeedback = null;
+        renderGamesPage();
+      }
+    }
+
+    function checkMissingLetters() {
+      const item = GameState.mlDeck[GameState.mlIndex];
+      if (!item) return;
+      const allCorrect = GameState.mlMaskedIndices.every(
+        (idx) => (GameState.mlInputs[idx] || '').toUpperCase() === item.word[idx].toUpperCase()
+      );
+      if (allCorrect) {
+        if (GameState.mlFeedback !== 'correct') {
+          recordScore(GameState.mlHintUsed ? 5 : 10, false);
+        }
+        GameState.mlFeedback = 'correct';
+      } else {
+        GameState.mlFeedback = 'wrong';
+        resetStreak();
+      }
+      renderGamesPage();
+    }
+
+    function nextMissingWord() {
+      GameState.mlIndex = (GameState.mlIndex + 1) % GameState.mlDeck.length;
+      prepareCurrentMissingWord();
+      renderGamesPage();
+    }
+
+    /* -------------------------------------------------------------
+       GAME 3: GUESS THE MEANING
+    -------------------------------------------------------------- */
+    function setupGuessMeaningDeck() {
+      const deck = shuffleArray(getLevelPracticeDeck(AppState.selectedLevel));
+      GameState.gmDeck = deck;
+      GameState.gmIndex = 0;
+      prepareCurrentGuessQuestion();
+    }
+
+    function prepareCurrentGuessQuestion() {
+      const deck = GameState.gmDeck;
+      const current = deck[GameState.gmIndex];
+      if (!current) return;
+      const distractors = shuffleArray(deck.filter((w) => w.id !== current.id)).slice(0, 3);
+      GameState.gmOptions = shuffleArray([current, ...distractors]);
+      GameState.gmSelected = null;
+    }
+
+    function selectGuessMeaningOption(chosenId) {
+      if (GameState.gmSelected) return;
+      const current = GameState.gmDeck[GameState.gmIndex];
+      GameState.gmSelected = chosenId;
+      if (chosenId === current.id) {
+        recordScore(10, true);
+      } else {
+        AppState.tracker.quizAnswered += 1;
+        saveTrackerToStorage();
+        updateTrackerDisplay();
+        resetStreak();
+      }
+      renderGamesPage();
+    }
+
+    function nextGuessQuestion() {
+      GameState.gmIndex = (GameState.gmIndex + 1) % GameState.gmDeck.length;
+      prepareCurrentGuessQuestion();
+      renderGamesPage();
+    }
+
+    /* -------------------------------------------------------------
+       GAME 4: WORD SCRAMBLE
+    -------------------------------------------------------------- */
+    function setupScrambleDeck() {
+      const deck = shuffleArray(getLevelPracticeDeck(AppState.selectedLevel));
+      GameState.wsDeck = deck;
+      GameState.wsIndex = 0;
+      prepareCurrentScrambleWord();
+    }
+
+    function prepareCurrentScrambleWord() {
+      const current = GameState.wsDeck[GameState.wsIndex];
+      if (!current) return;
+      const chars = current.word.toUpperCase().split('');
+      let scrambled = shuffleArray(chars);
+      if (scrambled.join('') === chars.join('') && chars.length > 1) {
+        scrambled = [...chars.slice(1), chars[0]];
+      }
+      GameState.wsTiles = scrambled.map((ch, idx) => ({
+        id: idx,
+        char: ch,
+        used: false
+      }));
+      GameState.wsChosenIds = [];
+      GameState.wsFeedback = null;
+      GameState.wsHintShown = false;
+    }
+
+    function pickScrambleTile(tileId) {
+      if (GameState.wsFeedback === 'correct') return;
+      const tile = GameState.wsTiles.find((t) => t.id === tileId);
+      if (!tile || tile.used) return;
+      tile.used = true;
+      GameState.wsChosenIds.push(tileId);
+      GameState.wsFeedback = null;
+      renderGamesPage();
+    }
+
+    function unpickScrambleSlot(slotPos) {
+      if (GameState.wsFeedback === 'correct') return;
+      const tileId = GameState.wsChosenIds[slotPos];
+      if (tileId === undefined) return;
+      const tile = GameState.wsTiles.find((t) => t.id === tileId);
+      if (tile) tile.used = false;
+      GameState.wsChosenIds.splice(slotPos, 1);
+      GameState.wsFeedback = null;
+      renderGamesPage();
+    }
+
+    function resetScrambleTiles() {
+      GameState.wsTiles.forEach((t) => (t.used = false));
+      GameState.wsChosenIds = [];
+      GameState.wsFeedback = null;
+      renderGamesPage();
+    }
+
+    function checkScrambleAnswer() {
+      const current = GameState.wsDeck[GameState.wsIndex];
+      if (!current) return;
+      const built = GameState.wsChosenIds
+        .map((id) => {
+          const t = GameState.wsTiles.find((item) => item.id === id);
+          return t ? t.char : '';
+        })
+        .join('');
+
+      if (built === current.word.toUpperCase()) {
+        if (GameState.wsFeedback !== 'correct') {
+          recordScore(GameState.wsHintShown ? 5 : 10, false);
+        }
+        GameState.wsFeedback = 'correct';
+      } else {
+        GameState.wsFeedback = 'wrong';
+        resetStreak();
+      }
+      renderGamesPage();
+    }
+
+    function nextScrambleWord() {
+      GameState.wsIndex = (GameState.wsIndex + 1) % GameState.wsDeck.length;
+      prepareCurrentScrambleWord();
+      renderGamesPage();
+    }
+
+    function initAllGames() {
+      setupMatchingRound();
+      setupMissingLettersDeck();
+      setupGuessMeaningDeck();
+      setupScrambleDeck();
+    }
+
+    /* -------------------------------------------------------------
+       KEYBOARD SUPPORT FOR WORD SCRAMBLE
+    -------------------------------------------------------------- */
+    document.addEventListener('keydown', (e) => {
+      if (GameState.mode !== 'scramble') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (e.key === 'Backspace') {
+        if (GameState.wsChosenIds.length > 0 && GameState.wsFeedback !== 'correct') {
+          e.preventDefault();
+          unpickScrambleSlot(GameState.wsChosenIds.length - 1);
+        }
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        const current = GameState.wsDeck[GameState.wsIndex];
+        if (current && GameState.wsChosenIds.length === current.word.length) {
+          e.preventDefault();
+          checkScrambleAnswer();
+        }
+        return;
+      }
+
+      if (/^[a-zA-Z]$/.test(e.key)) {
+        const upper = e.key.toUpperCase();
+        const foundTile = GameState.wsTiles.find((t) => !t.used && t.char === upper);
+        if (foundTile) {
+          e.preventDefault();
+          pickScrambleTile(foundTile.id);
+        }
+      }
+    });
+
+    /* -------------------------------------------------------------
+       RENDER GAMES PAGE
+    -------------------------------------------------------------- */
+    function renderGamesPage() {
+      const mount = document.getElementById('games-page-mount');
+      const levelId = AppState.selectedLevel || 'beginner';
+      const lvl = CURRICULUM_DATA[levelId];
+      const meta = LEVEL_META.find((m) => m.id === levelId);
+      if (!mount || !lvl || !meta) return;
+
+      const tabs = [
+        { id: 'matching', label: '1. Word Matching (শব্দ মেলানো)' },
+        { id: 'missing', label: '2. Missing Letters (হারানো অক্ষর)' },
+        { id: 'guess', label: '3. Guess the Meaning (অর্থ বাছাই)' },
+        { id: 'scramble', label: '4. Word Scramble (অক্ষর সাজানো)' }
+      ];
+
+      let gameBodyHTML = '';
+
+      // 1. MATCHING
+      if (GameState.mode === 'matching') {
+        const allMatched = GameState.matchMatchedIds.length === GameState.matchPairs.length;
+        const matchProgressPct = Math.round((GameState.matchMatchedIds.length / GameState.matchPairs.length) * 100);
+        gameBodyHTML = `
+          <div class="max-w-3xl mx-auto space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="font-bengali text-xs sm:text-sm font-semibold" style="color: var(--ink-secondary);">
+                বাম পাশের ইংরেজি শব্দের সাথে ডান পাশের সঠিক বাংলা অর্থ মিলিয়ে ক্লিক করুন (${GameState.matchMatchedIds.length}/${GameState.matchPairs.length} সম্পন্ন):
+              </p>
+              <button
+                type="button"
+                onclick="setupMatchingRound(); renderGamesPage()"
+                class="font-bengali px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                নতুন রাউন্ড (Reset)
+              </button>
+            </div>
+
+            <!-- Matching Progress Bar -->
+            <div class="vw-progress-track h-2 w-full rounded-full overflow-hidden">
+              <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${matchProgressPct}%;"></div>
+            </div>
+
+            ${
+              allMatched
+                ? `
+                  <div class="rounded-2xl p-6 border text-center vw-panel-reveal" style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.3);">
+                    <h4 class="font-editorial text-2xl font-bold mb-1" style="color: var(--accent-sage);">Round Complete! দারুণ হয়েছে!</h4>
+                    <p class="font-bengali text-xs sm:text-sm mb-4" style="color: var(--ink-primary);">
+                      তুমি ${lvl.title} লেভেলের সবকটি শব্দের অর্থ সঠিকভাবে মিলিয়েছ! (+50 Points)
+                    </p>
+                    <button
+                      type="button"
+                      onclick="setupMatchingRound(); renderGamesPage()"
+                      class="vw-btn-primary font-bengali px-5 py-2.5 rounded-xl text-xs font-bold"
+                    >
+                      আবার খেলুন (Play Again) &rarr;
+                    </button>
+                  </div>
+                `
+                : `
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-2.5">
+                      <span class="text-[11px] font-bold uppercase tracking-wider block mb-1" style="color: var(--ink-muted);">ENGLISH WORDS</span>
+                      ${GameState.matchPairs
+                        .map((item) => {
+                          const sid = registerSpeakText(item.word);
+                          const isMatched = GameState.matchMatchedIds.includes(item.id);
+                          const isSelected = GameState.matchSelectedLeft === item.id;
+                          const isWrong = GameState.matchWrongPair && GameState.matchWrongPair.left === item.id;
+                          const isJustMatched = GameState.justMatchedId === item.id;
+                          let styleStr = 'background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);';
+                          if (isMatched) {
+                            styleStr = 'background-color: var(--accent-sage-soft); border-color: var(--accent-sage); color: var(--accent-sage); opacity: 0.78;';
+                          } else if (isWrong) {
+                            styleStr = 'background-color: #FEE2E2; border-color: #DC2626; color: #991B1B;';
+                          } else if (isSelected) {
+                            styleStr = 'background-color: var(--accent-sage); border-color: var(--accent-sage); color: #FFFFFF;';
+                          }
+
+                          return `
+                            <div
+                              onclick="selectMatchLeft('${item.id}')"
+                              class="rounded-2xl px-4 py-3 border flex items-center justify-between gap-2 cursor-pointer transition-all ${isWrong ? 'vw-shake' : ''} ${isJustMatched ? 'vw-correct-glow' : ''}"
+                              style="${styleStr}"
+                            >
+                              <span class="font-editorial text-base sm:text-lg font-bold">${escapeHtml(item.word)} ${isMatched ? '✓' : ''}</span>
+                              <button
+                                type="button"
+                                onclick="event.stopPropagation(); speakById(${sid}, this)"
+                                class="vw-speak-btn ${isSelected ? 'text-white' : 'vw-speak-main'} w-7 h-7 rounded-full text-xs"
+                              >
+                                ${speakerIconSvg('w-3.5 h-3.5')}
+                              </button>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+
+                    <div class="space-y-2.5">
+                      <span class="text-[11px] font-bold uppercase tracking-wider block mb-1" style="color: var(--ink-muted);">BENGALI MEANINGS</span>
+                      ${GameState.matchRightList
+                        .map((item) => {
+                          const isMatched = GameState.matchMatchedIds.includes(item.id);
+                          const isWrong = GameState.matchWrongPair && GameState.matchWrongPair.right === item.id;
+                          const isJustMatched = GameState.justMatchedId === item.id;
+                          let styleStr = 'background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);';
+                          if (isMatched) {
+                            styleStr = 'background-color: var(--accent-sage-soft); border-color: var(--accent-sage); color: var(--accent-sage); opacity: 0.78;';
+                          } else if (isWrong) {
+                            styleStr = 'background-color: #FEE2E2; border-color: #DC2626; color: #991B1B;';
+                          }
+
+                          return `
+                            <div
+                              onclick="selectMatchRight('${item.id}')"
+                              class="rounded-2xl px-4 py-3 border flex items-center justify-between gap-2 cursor-pointer transition-all font-bengali text-sm font-bold ${isWrong ? 'vw-shake' : ''} ${isJustMatched ? 'vw-correct-glow' : ''}"
+                              style="${styleStr}"
+                            >
+                              <span>${escapeHtml(item.meaningBn)} ${isMatched ? '✓' : ''}</span>
+                              ${isMatched ? '<span class="text-xs">মিল সম্পন্ন</span>' : '<span class="text-xs text-gray-400">ক্লিক করুন</span>'}
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  </div>
+                `
+            }
+          </div>
+        `;
+      }
+
+      // 2. MISSING LETTERS
+      if (GameState.mode === 'missing') {
+        const item = GameState.mlDeck[GameState.mlIndex];
+        const sid = registerSpeakText(item.word);
+        const letters = item.word.split('');
+        const masked = GameState.mlMaskedIndices;
+        const mlProgressPct = Math.round(((GameState.mlIndex + 1) / GameState.mlDeck.length) * 100);
+
+        const alphabetBank = Array.from(new Set([...letters.map((c) => c.toUpperCase()), 'E', 'A', 'R', 'T', 'I', 'O', 'N', 'S', 'L', 'C'])).slice(0, 14);
+        const bankChars = shuffleArray(alphabetBank);
+
+        gameBodyHTML = `
+          <div class="max-w-2xl mx-auto space-y-5 text-center">
+            <div class="flex items-center justify-between text-xs font-semibold" style="color: var(--ink-secondary);">
+              <span class="font-bengali">শব্দ ${GameState.mlIndex + 1} / ${GameState.mlDeck.length}</span>
+              <button
+                type="button"
+                onclick="speakById(${sid}, this)"
+                class="vw-speak-btn vw-speak-main px-3 py-1 rounded-full text-xs font-bold gap-1.5"
+              >
+                ${speakerIconSvg('w-3.5 h-3.5')}
+                <span>Listen</span>
+              </button>
+            </div>
+
+            <!-- Missing Letters Progress Bar -->
+            <div class="vw-progress-track h-2 w-full rounded-full overflow-hidden">
+              <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${mlProgressPct}%;"></div>
+            </div>
+
+            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <p class="font-bengali text-xs sm:text-sm" style="color: var(--ink-secondary);">
+                বাংলা অর্থ: <strong class="font-bengali text-base" style="color: var(--ink-primary);">${escapeHtml(item.meaningBn)}</strong>
+              </p>
+              <p class="text-xs mt-1" style="color: var(--ink-muted);">${escapeHtml(item.explanationEn)}</p>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 ${GameState.mlFeedback === 'correct' ? 'vw-correct-glow' : GameState.mlFeedback === 'wrong' ? 'vw-shake' : ''}">
+              ${letters
+                .map((ch, idx) => {
+                  const isMasked = masked.includes(idx);
+                  if (!isMasked) {
+                    return `
+                      <div
+                        class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl border flex items-center justify-center font-editorial text-xl sm:text-2xl font-bold uppercase shadow-sm"
+                        style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                      >
+                        ${ch}
+                      </div>
+                    `;
+                  }
+                  const val = GameState.mlInputs[idx] || '';
+                  return `
+                    <input
+                      id="ml-box-${idx}"
+                      type="text"
+                      maxlength="1"
+                      value="${val}"
+                      oninput="handleMissingLetterInput(${idx}, this.value)"
+                      aria-label="Missing letter ${idx + 1}"
+                      class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl border-2 text-center font-editorial text-xl sm:text-2xl font-bold uppercase focus:outline-none"
+                      style="background-color: var(--surface-white); border-color: var(--accent-sage); color: var(--accent-sage);"
+                    />
+                  `;
+                })
+                .join('')}
+            </div>
+              ${letters
+                .map((ch, idx) => {
+                  const isMasked = masked.includes(idx);
+                  if (!isMasked) {
+                    return `
+                      <div
+                        class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl border flex items-center justify-center font-editorial text-xl sm:text-2xl font-bold uppercase shadow-sm"
+                        style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                      >
+                        ${ch}
+                      </div>
+                    `;
+                  }
+                  const val = GameState.mlInputs[idx] || '';
+                  return `
+                    <input
+                      id="ml-box-${idx}"
+                      type="text"
+                      maxlength="1"
+                      value="${val}"
+                      oninput="handleMissingLetterInput(${idx}, this.value)"
+                      aria-label="Missing letter ${idx + 1}"
+                      class="w-10 h-12 sm:w-12 sm:h-14 rounded-xl border-2 text-center font-editorial text-xl sm:text-2xl font-bold uppercase focus:outline-none"
+                      style="background-color: var(--surface-white); border-color: var(--accent-sage); color: var(--accent-sage);"
+                    />
+                  `;
+                })
+                .join('')}
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-1.5">
+              ${bankChars
+                .map(
+                  (bch) => `
+                    <button
+                      type="button"
+                      onclick="clickMissingLetterTile('${bch}')"
+                      class="w-9 h-9 rounded-lg border font-bold text-xs sm:text-sm hover:border-[#2D5A4C] transition-all"
+                      style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+                    >
+                      ${bch}
+                    </button>
+                  `
+                )
+                .join('')}
+            </div>
+
+            ${
+              GameState.mlFeedback === 'correct'
+                ? `<p class="font-bengali text-sm font-bold" style="color: var(--accent-sage);">সঠিক উত্তর! শব্দটি হলো: ${escapeHtml(item.word)} ✓</p>`
+                : GameState.mlFeedback === 'wrong'
+                ? `<p class="font-bengali text-sm font-bold" style="color: var(--accent-terracotta);">বানানটি সঠিক হয়নি। আবার চেষ্টা করুন অথবা Hint নিন।</p>`
+                : ''
+            }
+
+            <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onclick="revealMissingHint()"
+                class="font-bengali px-4 py-2.5 rounded-xl border text-xs font-bold"
+                style="background-color: var(--accent-terracotta-soft); border-color: rgba(194, 109, 83, 0.25); color: var(--accent-terracotta);"
+              >
+                Hint
+              </button>
+              <button
+                type="button"
+                onclick="clearMissingLetters()"
+                class="px-4 py-2.5 rounded-xl border text-xs font-bold"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onclick="checkMissingLetters()"
+                class="vw-btn-primary px-5 py-2.5 rounded-xl text-xs font-bold"
+              >
+                Check Answer
+              </button>
+              <button
+                type="button"
+                onclick="nextMissingWord()"
+                class="px-4 py-2.5 rounded-xl border text-xs font-bold"
+                style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                Next &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. GUESS THE MEANING
+      if (GameState.mode === 'guess') {
+        const current = GameState.gmDeck[GameState.gmIndex];
+        const sid = registerSpeakText(current.word);
+        const gmProgressPct = Math.round(((GameState.gmIndex + 1) / GameState.gmDeck.length) * 100);
+
+        gameBodyHTML = `
+          <div class="max-w-2xl mx-auto space-y-5">
+            <div class="flex items-center justify-between text-xs font-semibold" style="color: var(--ink-secondary);">
+              <span class="font-bengali">প্রশ্ন ${GameState.gmIndex + 1} / ${GameState.gmDeck.length}</span>
+              <span class="font-bengali">সঠিক বাংলা অর্থটি নির্বাচন করুন</span>
+            </div>
+
+            <!-- Guess Meaning Progress Bar -->
+            <div class="vw-progress-track h-2 w-full rounded-full overflow-hidden">
+              <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${gmProgressPct}%;"></div>
+            </div>
+
+            <div class="rounded-2xl p-6 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <span class="text-[11px] font-bold uppercase tracking-wider block mb-2" style="color: var(--ink-muted);">WHAT IS THE BENGALI MEANING OF</span>
+              <div class="flex items-center justify-center gap-3">
+                <h4 class="font-editorial text-3xl sm:text-4xl font-bold" style="color: var(--ink-primary);">${escapeHtml(current.word)}</h4>
+                <button
+                  type="button"
+                  onclick="speakById(${sid}, this)"
+                  class="vw-speak-btn vw-speak-main px-3 py-1.5 rounded-full text-xs font-bold gap-1"
+                >
+                  ${speakerIconSvg('w-3.5 h-3.5')}
+                  <span>Listen</span>
+                </button>
+              </div>
+              <p class="text-xs font-mono mt-1" style="color: var(--ink-muted);">${escapeHtml(current.ipa)}</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              ${GameState.gmOptions
+                .map((opt, idx) => {
+                  const isAnswered = Boolean(GameState.gmSelected);
+                  const isCorrectOpt = opt.id === current.id;
+                  const isChosen = GameState.gmSelected === opt.id;
+                  const feedbackAnim = isAnswered
+                    ? (isCorrectOpt ? 'vw-correct-glow' : (isChosen ? 'vw-shake' : ''))
+                    : '';
+
+                  let styleStr = 'background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);';
+                  if (isAnswered) {
+                    if (isCorrectOpt) {
+                      styleStr = 'background-color: var(--accent-sage-soft); border-color: var(--accent-sage); color: var(--accent-sage);';
+                    } else if (isChosen) {
+                      styleStr = 'background-color: #FEE2E2; border-color: #DC2626; color: #991B1B;';
+                    }
+                  }
+
+                  return `
+                    <button
+                      type="button"
+                      onclick="selectGuessMeaningOption('${opt.id}')"
+                      ${isAnswered ? 'disabled' : ''}
+                      class="rounded-2xl p-4 border text-left font-bengali text-sm font-bold transition-all ${feedbackAnim}"
+                      style="${styleStr}"
+                    >
+                      <span class="inline-block w-6 h-6 rounded-full text-center text-xs leading-6 mr-2" style="background-color: var(--surface-sand); color: var(--ink-primary);">
+                        ${idx + 1}
+                      </span>
+                      <span>${escapeHtml(opt.meaningBn)}</span>
+                    </button>
+                  `;
+                })
+                .join('')}
+            </div>
+
+            ${
+              GameState.gmSelected
+                ? `
+                  <div class="rounded-2xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 vw-panel-reveal" style="background-color: var(--surface-sand); border-color: var(--border-subtle);">
+                    <div>
+                      <p class="font-bengali text-xs sm:text-sm font-bold" style="color: ${GameState.gmSelected === current.id ? 'var(--accent-sage)' : 'var(--accent-terracotta)'};">
+                        ${GameState.gmSelected === current.id ? 'সঠিক উত্তর! চমৎকার।' : `ভুল উত্তর! সঠিক অর্থ হলো: ${escapeHtml(current.meaningBn)}`}
+                      </p>
+                      <p class="text-xs mt-0.5" style="color: var(--ink-secondary);">${escapeHtml(current.explanationEn)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onclick="nextGuessQuestion()"
+                      class="vw-btn-primary px-5 py-2.5 rounded-xl text-xs font-bold shrink-0"
+                    >
+                      Next Question &rarr;
+                    </button>
+                  </div>
+                `
+                : ''
+            }
+          </div>
+        `;
+      }
+
+      // 4. WORD SCRAMBLE
+      if (GameState.mode === 'scramble') {
+        const current = GameState.wsDeck[GameState.wsIndex];
+        const sid = registerSpeakText(current.word);
+        const wordLen = current.word.length;
+        const wsProgressPct = Math.round(((GameState.wsIndex + 1) / GameState.wsDeck.length) * 100);
+
+        gameBodyHTML = `
+          <div class="max-w-2xl mx-auto space-y-5 text-center">
+            <div class="flex items-center justify-between text-xs font-semibold" style="color: var(--ink-secondary);">
+              <span class="font-bengali">শব্দ ${GameState.wsIndex + 1} / ${GameState.wsDeck.length}</span>
+              <button
+                type="button"
+                onclick="speakById(${sid}, this)"
+                class="vw-speak-btn vw-speak-main px-3 py-1 rounded-full text-xs font-bold gap-1.5"
+              >
+                ${speakerIconSvg('w-3.5 h-3.5')}
+                <span>Listen</span>
+              </button>
+            </div>
+
+            <!-- Word Scramble Progress Bar -->
+            <div class="vw-progress-track h-2 w-full rounded-full overflow-hidden">
+              <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${wsProgressPct}%;"></div>
+            </div>
+
+            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <p class="font-bengali text-xs sm:text-sm" style="color: var(--ink-secondary);">
+                এলোমেলো অক্ষরগুলো ক্লিক করে অথবা কীবোর্ডে টাইপ করে সঠিক ইংরেজি শব্দ তৈরি করুন (${wordLen} অক্ষরের শব্দ)
+              </p>
+              ${
+                GameState.wsHintShown
+                  ? `<p class="font-bengali text-sm font-bold mt-2" style="color: var(--accent-sage);">Hint (বাংলা অর্থ): ${escapeHtml(current.meaningBn)}</p>`
+                  : ''
+              }
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-2 min-h-[56px] ${GameState.wsFeedback === 'correct' ? 'vw-correct-glow' : GameState.wsFeedback === 'wrong' ? 'vw-shake' : ''}">
+              ${Array.from({ length: wordLen })
+                .map((_, slotIdx) => {
+                  const tileId = GameState.wsChosenIds[slotIdx];
+                  const tile = tileId !== undefined ? GameState.wsTiles.find((t) => t.id === tileId) : null;
+                  if (tile) {
+                    return `
+                      <button
+                        type="button"
+                        onclick="unpickScrambleSlot(${slotIdx})"
+                        class="w-11 h-12 sm:w-12 sm:h-14 rounded-xl border-2 font-editorial text-xl font-bold"
+                        style="background-color: var(--accent-sage-soft); border-color: var(--accent-sage); color: var(--accent-sage);"
+                      >
+                        ${tile.char}
+                      </button>
+                    `;
+                  }
+                  return `
+                    <div
+                      class="w-11 h-12 sm:w-12 sm:h-14 rounded-xl border-2 border-dashed flex items-center justify-center text-xs font-bold"
+                      style="border-color: var(--border-hover); color: var(--ink-muted);"
+                    >
+                      ${slotIdx + 1}
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+              ${GameState.wsTiles
+                .map(
+                  (t) => `
+                    <button
+                      type="button"
+                      onclick="pickScrambleTile(${t.id})"
+                      ${t.used ? 'disabled' : ''}
+                      class="w-11 h-12 rounded-xl border font-editorial text-lg font-bold transition-all disabled:opacity-30"
+                      style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+                    >
+                      ${t.char}
+                    </button>
+                  `
+                )
+                .join('')}
+            </div>
+
+            ${
+              GameState.wsFeedback === 'correct'
+                ? `<p class="font-bengali text-sm font-bold" style="color: var(--accent-sage);">সঠিক! শব্দটি হলো: ${escapeHtml(current.word)} (${escapeHtml(current.meaningBn)}) ✓</p>`
+                : GameState.wsFeedback === 'wrong'
+                ? `<p class="font-bengali text-sm font-bold" style="color: var(--accent-terracotta);">শব্দটি সঠিক হয়নি। অক্ষরে ক্লিক করে পরিবর্তন করুন বা Reset চাপুন।</p>`
+                : ''
+            }
+
+            <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onclick="GameState.wsHintShown = true; renderGamesPage()"
+                class="font-bengali px-4 py-2.5 rounded-xl border text-xs font-bold"
+                style="background-color: var(--accent-terracotta-soft); border-color: rgba(194, 109, 83, 0.25); color: var(--accent-terracotta);"
+              >
+                Hint
+              </button>
+              <button
+                type="button"
+                onclick="resetScrambleTiles()"
+                class="px-4 py-2.5 rounded-xl border text-xs font-bold"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onclick="checkScrambleAnswer()"
+                ${GameState.wsChosenIds.length !== wordLen ? 'disabled' : ''}
+                class="vw-btn-primary px-5 py-2.5 rounded-xl text-xs font-bold"
+              >
+                Check Answer
+              </button>
+              <button
+                type="button"
+                onclick="nextScrambleWord()"
+                class="px-4 py-2.5 rounded-xl border text-xs font-bold"
+                style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                Next &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      mount.innerHTML = `
+        <div class="space-y-6">
+          <!-- Top Sub-Bar with Quick Level Switcher & Back to Learn -->
+          <div
+            class="sticky top-16 z-20 rounded-2xl p-3 border backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-sm"
+            style="background-color: rgba(255, 255, 255, 0.95); border-color: var(--border-subtle);"
+          >
+            <a
+              href="learn.html"
+              class="font-bengali inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+              style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+            >
+              &larr; শব্দ ও পাঠ্যক্রমে ফিরুন (Back to Learn)
+            </a>
+
+            <!-- Level Switcher -->
+            <div class="flex items-center gap-1 overflow-x-auto py-0.5">
+              ${LEVEL_META.map((lm) => {
+                const isCur = lm.id === levelId;
+                return `
+                  <button
+                    type="button"
+                    onclick="switchLevel('${lm.id}')"
+                    class="font-bengali px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                      isCur
+                        ? 'bg-[#2D5A4C] text-white shadow-sm'
+                        : 'bg-[#F3EFEA] text-[#5C6660] hover:text-[#1E2421]'
+                    }"
+                  >
+                    ${lm.title}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Quick Link to Flashcards -->
+            <a
+              href="flashcards.html"
+              class="font-bengali px-3 py-1.5 rounded-xl border text-xs font-bold hover:border-[#2D5A4C]"
+              style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+            >
+              3D Flashcards &rarr;
+            </a>
+          </div>
+
+          <!-- Main Games Container -->
+          <div class="rounded-3xl p-5 sm:p-8 border space-y-6" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            
+            <!-- Header & Live Scoreboard -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b" style="border-color: var(--border-subtle);">
+              <div>
+                <span class="badge-${lvl.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full inline-block mb-1.5">
+                  ${lvl.title} PRACTICE ARENA &bull; ৪টি মেমোরি গেম
+                </span>
+                <h1 class="font-editorial text-2xl sm:text-3xl font-bold" style="color: var(--ink-primary);">
+                  Vocabulary Memory Games
+                </h1>
+                <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                  ${lvl.title} লেভেলের বাছাইকৃত শব্দ দিয়ে খেলুন এবং আপনার ভোকাবুলারি রিটেনশন পরীক্ষা করুন।
+                </p>
+              </div>
+
+              <!-- Live Scoreboard -->
+              <div class="grid grid-cols-3 gap-2.5 shrink-0">
+                <div class="rounded-2xl px-3.5 py-2.5 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                  <span class="font-bengali text-[11px] font-semibold block" style="color: var(--ink-muted);">Score (স্কোর)</span>
+                  <strong class="font-editorial text-lg sm:text-xl font-bold" style="color: var(--accent-sage);">${GameState.score}</strong>
+                </div>
+                <div class="rounded-2xl px-3.5 py-2.5 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                  <span class="font-bengali text-[11px] font-semibold block" style="color: var(--ink-muted);">Streak (ধারা)</span>
+                  <strong class="font-editorial text-lg sm:text-xl font-bold" style="color: var(--accent-terracotta);">${GameState.streak}</strong>
+                </div>
+                <div class="rounded-2xl px-3.5 py-2.5 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                  <span class="font-bengali text-[11px] font-semibold block" style="color: var(--ink-muted);">Total Points</span>
+                  <strong class="font-editorial text-lg sm:text-xl font-bold" style="color: var(--ink-primary);">${AppState.tracker.gameScore}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 Practice Mode Tabs -->
+            <div class="flex flex-wrap items-center gap-2">
+              ${tabs
+                .map(
+                  (t) => `
+                    <button
+                      type="button"
+                      onclick="switchGameMode('${t.id}')"
+                      class="vw-game-tab ${GameState.mode === t.id ? 'active' : ''} font-bengali px-3.5 py-2 rounded-xl text-xs font-bold"
+                    >
+                      ${t.label}
+                    </button>
+                  `
+                )
+                .join('')}
+            </div>
+
+            <!-- Active Game Workspace -->
+            <div class="pt-2">
+              ${gameBodyHTML}
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initAllGames();
+      renderAppHeader('games');
+      renderAppFooter();
+      renderGamesPage();
+    });
+  </script>
+</body>
+</html>

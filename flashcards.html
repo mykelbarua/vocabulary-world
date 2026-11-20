@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Flashcards — Vocabulary World</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Fraunces, Plus Jakarta Sans, Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Shared Editorial Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Dark Mode Zero-Flash Initializer -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('vw_theme');
+        if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Shared Sidebar & Mobile Top Navigation -->
+  <div id="app-header"></div>
+
+  <!-- Main Content Layout (Adjusts margin based on sidebar state) -->
+  <div class="vw-main-layout flex-1 flex flex-col min-w-0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-9">
+      <div id="flashcards-page-mount" class="vw-panel-reveal"></div>
+    </main>
+
+    <!-- Shared Editorial Footer -->
+    <div id="app-footer"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    let fcDeck = [];
+    let fcIndex = 0;
+    let fcFlipped = false;
+    let fcMasteredIds = [];
+
+    // Support query param ?level=xxx
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramLevel = urlParams.get('level');
+    if (paramLevel && typeof CURRICULUM_DATA !== 'undefined' && CURRICULUM_DATA[paramLevel]) {
+      AppState.selectedLevel = paramLevel;
+      saveSetupToStorage(paramLevel, AppState.assessmentIndex);
+    }
+
+    function switchLevel(newLevel) {
+      if (!CURRICULUM_DATA[newLevel]) return;
+      PronunciationEngine.stopAll();
+      AppState.selectedLevel = newLevel;
+      saveSetupToStorage(newLevel, AppState.assessmentIndex);
+      initDeck();
+      renderAppHeader('flashcards');
+      const mount = document.getElementById('flashcards-page-mount');
+      if (mount) {
+        mount.classList.remove('vw-view-enter');
+        void mount.offsetWidth;
+        mount.classList.add('vw-view-enter');
+      }
+      renderFlashcardsPage();
+    }
+
+    function initDeck() {
+      const levelId = AppState.selectedLevel || 'beginner';
+      fcDeck = getLevelPracticeDeck(levelId);
+      fcIndex = 0;
+      fcFlipped = false;
+      fcMasteredIds = [];
+    }
+
+    function flipCard() {
+      fcFlipped = !fcFlipped;
+      renderFlashcardsPage();
+    }
+
+    function prevCard() {
+      PronunciationEngine.stopAll();
+      if (!fcDeck.length) return;
+      fcIndex = (fcIndex - 1 + fcDeck.length) % fcDeck.length;
+      fcFlipped = false;
+      renderFlashcardsPage();
+    }
+
+    function nextCard() {
+      PronunciationEngine.stopAll();
+      if (!fcDeck.length) return;
+      fcIndex = (fcIndex + 1) % fcDeck.length;
+      fcFlipped = false;
+      renderFlashcardsPage();
+    }
+
+    function shuffleDeck() {
+      PronunciationEngine.stopAll();
+      fcDeck = shuffleArray(fcDeck);
+      fcIndex = 0;
+      fcFlipped = false;
+      renderFlashcardsPage();
+    }
+
+    function markGotIt() {
+      if (!fcDeck.length) return;
+      const card = fcDeck[fcIndex];
+      if (!card) return;
+
+      if (!fcMasteredIds.includes(card.id)) {
+        fcMasteredIds.push(card.id);
+        AppState.tracker.flashcardsCompleted += 1;
+        awardGamePoints(5, false);
+      }
+      nextCard();
+    }
+
+    function renderFlashcardsPage() {
+      const mount = document.getElementById('flashcards-page-mount');
+      const levelId = AppState.selectedLevel || 'beginner';
+      const lvl = CURRICULUM_DATA[levelId];
+      const meta = LEVEL_META.find((m) => m.id === levelId);
+      if (!mount || !lvl || !meta || !fcDeck.length) return;
+
+      const card = fcDeck[fcIndex];
+      const cardWordSpeakId = registerSpeakText(card.word);
+      const cardExSpeakId = registerSpeakText(card.example);
+      const isGotIt = fcMasteredIds.includes(card.id);
+      const masteryPct = Math.round((fcMasteredIds.length / fcDeck.length) * 100);
+
+      mount.innerHTML = `
+        <div class="space-y-6">
+          <!-- Top Sub-Bar with Quick Level Switcher & Back to Learn -->
+          <div
+            class="sticky top-16 z-20 rounded-2xl p-3 border backdrop-blur-md flex flex-col gap-2 shadow-sm"
+            style="background-color: rgba(255, 255, 255, 0.95); border-color: var(--border-subtle);"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <a
+                href="learn.html"
+                class="font-bengali inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+                style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                &larr; শব্দ ও পাঠ্যক্রমে ফিরুন (Back to Learn)
+              </a>
+
+              <!-- Level Switcher -->
+              <div class="flex items-center gap-1 overflow-x-auto py-0.5">
+                ${LEVEL_META.map((lm) => {
+                  const isCur = lm.id === levelId;
+                  return `
+                    <button
+                      type="button"
+                      onclick="switchLevel('${lm.id}')"
+                      class="font-bengali px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                        isCur
+                          ? 'bg-[#2D5A4C] text-white shadow-sm'
+                          : 'bg-[#F3EFEA] text-[#5C6660] hover:text-[#1E2421]'
+                      }"
+                    >
+                      ${lm.title}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+
+              <!-- Got It Mastered Badge -->
+              <span class="badge-${lvl.id} px-3 py-1 rounded-full text-xs font-bold">
+                Got It: ${fcMasteredIds.length} / ${fcDeck.length}
+              </span>
+            </div>
+
+            <!-- Smooth Card Mastery Progress Bar -->
+            <div class="pt-1.5 border-t flex items-center justify-between gap-3 text-xs" style="border-color: var(--border-subtle);">
+              <span class="font-bengali text-[11px] font-semibold shrink-0" style="color: var(--ink-muted);">
+                কার্ড মাস্টারি অগ্রগতি (${fcMasteredIds.length}/${fcDeck.length})
+              </span>
+              <div class="vw-progress-track h-2 flex-1 rounded-full overflow-hidden">
+                <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${masteryPct}%;"></div>
+              </div>
+              <span class="font-editorial text-xs font-bold shrink-0" style="color: var(--accent-sage);">
+                ${masteryPct}%
+              </span>
+            </div>
+          </div>
+
+          <!-- Main Flashcard Workspace -->
+          <div class="rounded-3xl p-6 sm:p-9 border space-y-6" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            
+            <!-- Header & Scoreboard -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b" style="border-color: var(--border-subtle);">
+              <div>
+                <span class="badge-${lvl.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full inline-block mb-1.5">
+                  ${lvl.title} FLASHCARDS &bull; ${fcDeck.length}টি শব্দের ডেক
+                </span>
+                <h1 class="font-editorial text-2xl sm:text-3xl font-bold" style="color: var(--ink-primary);">
+                  3D Interactive Flashcards
+                </h1>
+                <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                  কার্ডে ক্লিক করে বাংলা অর্থ ও উদাহরণ দেখুন। উচ্চস্বরে উচ্চারণ শুনুন এবং রিভিশন দিন।
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2.5 shrink-0">
+                <div class="rounded-2xl px-3.5 py-2 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                  <span class="font-bengali text-[10px] block" style="color: var(--ink-muted);">কার্ড নম্বর</span>
+                  <strong class="font-editorial text-base sm:text-lg font-bold" style="color: var(--accent-sage);">
+                    ${fcIndex + 1} / ${fcDeck.length}
+                  </strong>
+                </div>
+                <div class="rounded-2xl px-3.5 py-2 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                  <span class="font-bengali text-[10px] block" style="color: var(--ink-muted);">মাস্টার্ড</span>
+                  <strong class="font-editorial text-base sm:text-lg font-bold" style="color: var(--accent-terracotta);">
+                    ${fcMasteredIds.length}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3D Flashcard Scene -->
+            <div class="max-w-xl mx-auto">
+              <div class="vw-flashcard-scene">
+                <div onclick="flipCard()" class="vw-flashcard-inner ${fcFlipped ? 'is-flipped' : ''}">
+                  <!-- Front Face -->
+                  <div class="vw-flashcard-face p-6 sm:p-9 flex flex-col items-center justify-center text-center">
+                    <span class="badge-${lvl.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full mb-4">
+                      ${lvl.title} Flashcard &bull; Front
+                    </span>
+
+                    <div class="flex flex-wrap items-center justify-center gap-3 mb-2">
+                      <h2 class="font-editorial text-3xl sm:text-5xl font-bold" style="color: var(--ink-primary);">
+                        ${escapeHtml(card.word)}
+                      </h2>
+                      <button
+                        type="button"
+                        onclick="event.stopPropagation(); speakById(${cardWordSpeakId}, this)"
+                        class="vw-speak-btn vw-speak-main px-3 py-1.5 rounded-full text-xs font-bold gap-1.5 shrink-0"
+                      >
+                        ${speakerIconSvg('w-3.5 h-3.5')}
+                        <span>Listen</span>
+                      </button>
+                    </div>
+
+                    <p class="text-sm font-mono mb-6" style="color: var(--ink-muted);">${escapeHtml(card.ipa)}</p>
+
+                    <span class="font-bengali text-xs font-semibold px-3.5 py-1.5 rounded-full" style="background-color: var(--surface-sand); color: var(--ink-secondary);">
+                      অর্থ দেখতে কার্ডে ক্লিক করুন &circlearrowright;
+                    </span>
+                  </div>
+
+                  <!-- Back Face -->
+                  <div class="vw-flashcard-face vw-flashcard-back p-6 sm:p-9 flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between gap-2 mb-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">
+                          Meaning &amp; Example
+                        </span>
+                        <span class="font-editorial text-sm font-bold" style="color: var(--ink-muted);">${escapeHtml(card.word)}</span>
+                      </div>
+
+                      <h3 class="font-bengali text-2xl sm:text-3xl font-bold mb-1.5" style="color: var(--accent-sage);">
+                        ${escapeHtml(card.meaningBn)}
+                      </h3>
+                      <p class="text-xs sm:text-sm leading-relaxed mb-3" style="color: var(--ink-secondary);">
+                        ${escapeHtml(card.explanationEn)}
+                      </p>
+                    </div>
+
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--ink-muted);">EXAMPLE</span>
+                        <button
+                          type="button"
+                          onclick="event.stopPropagation(); speakById(${cardExSpeakId}, this)"
+                          class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1"
+                        >
+                          ${speakerIconSvg('w-3 h-3')}
+                          <span>Listen</span>
+                        </button>
+                      </div>
+                      <p class="text-xs sm:text-sm font-medium" style="color: var(--ink-primary);">&ldquo;${escapeHtml(card.example)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(card.exampleBn)})</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Flashcard Navigation Controls -->
+              <div class="flex flex-wrap items-center justify-center gap-2.5 pt-6">
+                <button
+                  type="button"
+                  onclick="prevCard()"
+                  class="px-4 py-2.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  &larr; Previous
+                </button>
+
+                <button
+                  type="button"
+                  onclick="markGotIt()"
+                  class="vw-btn-primary px-6 py-2.5 rounded-xl text-xs font-bold"
+                >
+                  ${isGotIt ? 'Got It ✓ (Completed)' : 'Got It ✓'}
+                </button>
+
+                <button
+                  type="button"
+                  onclick="nextCard()"
+                  class="px-4 py-2.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+                  style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+                >
+                  Next &rarr;
+                </button>
+
+                <button
+                  type="button"
+                  onclick="shuffleDeck()"
+                  class="px-4 py-2.5 rounded-xl border text-xs font-bold transition-colors"
+                  style="background-color: var(--accent-terracotta-soft); border-color: rgba(194, 109, 83, 0.25); color: var(--accent-terracotta);"
+                >
+                  Shuffle
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Link to Games -->
+            <div class="pt-6 border-t text-center" style="border-color: var(--border-subtle);">
+              <p class="font-bengali text-xs sm:text-sm text-gray-600 mb-3">
+                ফ্ল্যাশকার্ড দেখা শেষ? এবার ৪টি মেমোরি গেম খেলে নিজের প্রস্তুতি যাচাই করুন!
+              </p>
+              <a
+                href="games.html"
+                class="font-bengali px-5 py-2.5 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 hover:border-[#2D5A4C]"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                <span>Memory Games এ যান</span>
+                <span>&rarr;</span>
+              </a>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initDeck();
+      renderAppHeader('flashcards');
+      renderAppFooter();
+      renderFlashcardsPage();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Study Tracker — Vocabulary World</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Fraunces, Plus Jakarta Sans, Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Shared Editorial Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Dark Mode Zero-Flash Initializer -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('vw_theme');
+        if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Shared Sidebar & Mobile Top Navigation -->
+  <div id="app-header"></div>
+
+  <!-- Main Content Layout (Adjusts margin based on sidebar state) -->
+  <div class="vw-main-layout flex-1 flex flex-col min-w-0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-9">
+      <div id="tracker-page-mount" class="vw-panel-reveal"></div>
+    </main>
+
+    <!-- Shared Editorial Footer -->
+    <div id="app-footer"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    function resetDailyTracker() {
+      if (!confirm('আপনি কি আজকের অনুশীলনের পরিসংখ্যান রিসেট করতে চান?')) return;
+      AppState.tracker = {
+        dateKey: getTodayDateKey(),
+        exploredWordIds: [],
+        flashcardsCompleted: 0,
+        gameScore: 0,
+        quizAnswered: 0
+      };
+      saveTrackerToStorage();
+      const mount = document.getElementById('tracker-page-mount');
+      if (mount) {
+        mount.classList.remove('vw-view-enter');
+        void mount.offsetWidth;
+        mount.classList.add('vw-view-enter');
+      }
+      renderTrackerPage();
+    }
+
+    function getAllWordsMap() {
+      const map = {};
+      if (typeof CURRICULUM_DATA === 'undefined') return map;
+      Object.keys(CURRICULUM_DATA).forEach((lvlKey) => {
+        const lvl = CURRICULUM_DATA[lvlKey];
+        if (lvl && lvl.words) {
+          lvl.words.forEach((w) => {
+            map[w.id] = { ...w, levelTitle: lvl.title };
+          });
+        }
+      });
+      return map;
+    }
+
+    function renderTrackerPage() {
+      const mount = document.getElementById('tracker-page-mount');
+      if (!mount) return;
+
+      const t = AppState.tracker;
+      const levelId = AppState.selectedLevel || 'beginner';
+      const meta = (typeof LEVEL_META !== 'undefined' && LEVEL_META.find((m) => m.id === levelId)) || (typeof LEVEL_META !== 'undefined' && LEVEL_META[0]);
+      const assessOpt = typeof ASSESSMENT_OPTIONS !== 'undefined' ? ASSESSMENT_OPTIONS.find((o) => o.id === AppState.assessmentIndex) : null;
+      const wordsMap = getAllWordsMap();
+
+      const exploredList = t.exploredWordIds
+        .map((id) => wordsMap[id])
+        .filter(Boolean);
+
+      // Milestones
+      const milestones = [
+        { label: 'প্রথম পদক্ষেপ', desc: 'কমপক্ষে ১টি শব্দ অনুশীলন', done: t.exploredWordIds.length >= 1 },
+        { label: 'শব্দ অনুসন্ধানকারী', desc: '৩টি বা তার বেশি শব্দ অনুশীলন', done: t.exploredWordIds.length >= 3 },
+        { label: 'ফ্ল্যাশকার্ড মাস্টার', desc: '৩টি ফ্ল্যাশকার্ড সম্পন্ন', done: t.flashcardsCompleted >= 3 },
+        { label: 'কুইজ অংশগ্রহণকারী', desc: '৩টি কুইজের উত্তর দেওয়া', done: t.quizAnswered >= 3 },
+        { label: 'পয়েন্ট সংগ্রাহক', desc: '৫০+ গেম স্কোর অর্জন', done: t.gameScore >= 50 }
+      ];
+
+      mount.innerHTML = `
+        <div class="space-y-8">
+          
+          <!-- Header Banner -->
+          <div class="rounded-3xl p-6 sm:p-9 border flex flex-col md:flex-row md:items-center justify-between gap-6" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div>
+              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border mb-2.5" style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.22); color: var(--accent-sage);">
+                DAILY STUDY TRACKER &bull; দৈনিক পড়ার অগ্রগতি ও পরিসংখ্যান
+              </span>
+              <h1 class="font-editorial text-2xl sm:text-4xl font-bold" style="color: var(--ink-primary);">
+                Today&rsquo;s Learning Dashboard
+              </h1>
+              <p class="font-bengali text-xs sm:text-sm mt-1" style="color: var(--ink-secondary);">
+                আজকের সেশনে তুমি কতগুলো শব্দ শিখেছ এবং অনুশীলন করেছ তার সম্পূর্ণ রিপোর্ট।
+              </p>
+            </div>
+
+            <div class="flex flex-col items-start md:items-end gap-2 shrink-0">
+              <span class="font-editorial text-sm sm:text-base font-bold px-4 py-2 rounded-2xl border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--accent-sage);">
+                📅 ${escapeHtml(formatDisplayDate())}
+              </span>
+              <span class="font-bengali text-xs" style="color: var(--ink-muted);">প্রতিদিন রাত ১২টায় নতুন দিন শুরু হয়</span>
+            </div>
+          </div>
+
+          <!-- 4 Primary Metric Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="vw-metric-card rounded-3xl p-5 border shadow-sm cursor-default" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold" style="color: var(--ink-secondary);">Words Explored</span>
+                <span class="p-2 rounded-xl" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">📖</span>
+              </div>
+              <strong class="font-editorial text-3xl sm:text-4xl font-bold block" style="color: var(--accent-sage);">
+                ${t.exploredWordIds.length}
+              </strong>
+              <p class="font-bengali text-xs mt-1.5" style="color: var(--ink-muted);">
+                আজ বিস্তারিত দেখা শব্দের সংখ্যা
+              </p>
+            </div>
+
+            <div class="vw-metric-card rounded-3xl p-5 border shadow-sm cursor-default" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold" style="color: var(--ink-secondary);">Flashcards Done</span>
+                <span class="p-2 rounded-xl" style="background-color: var(--surface-sand); color: var(--ink-primary);">🗂️</span>
+              </div>
+              <strong class="font-editorial text-3xl sm:text-4xl font-bold block" style="color: var(--ink-primary);">
+                ${t.flashcardsCompleted}
+              </strong>
+              <p class="font-bengali text-xs mt-1.5" style="color: var(--ink-muted);">
+                Got It হিসেবে চিহ্নিত কার্ড
+              </p>
+            </div>
+
+            <div class="vw-metric-card rounded-3xl p-5 border shadow-sm cursor-default" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold" style="color: var(--ink-secondary);">Game Score</span>
+                <span class="p-2 rounded-xl" style="background-color: var(--accent-terracotta-soft); color: var(--accent-terracotta);">⭐</span>
+              </div>
+              <strong class="font-editorial text-3xl sm:text-4xl font-bold block" style="color: var(--accent-terracotta);">
+                ${t.gameScore}
+              </strong>
+              <p class="font-bengali text-xs mt-1.5" style="color: var(--ink-muted);">
+                মেমোরি গেম থেকে মোট অর্জিত পয়েন্ট
+              </p>
+            </div>
+
+            <div class="vw-metric-card rounded-3xl p-5 border shadow-sm cursor-default" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold" style="color: var(--ink-secondary);">Quiz Questions</span>
+                <span class="p-2 rounded-xl" style="background-color: #ECEAF6; color: #4A447A;">🎯</span>
+              </div>
+              <strong class="font-editorial text-3xl sm:text-4xl font-bold block" style="color: #4A447A;">
+                ${t.quizAnswered}
+              </strong>
+              <p class="font-bengali text-xs mt-1.5" style="color: var(--ink-muted);">
+                উত্তর দেওয়া কুইজের সংখ্যা
+              </p>
+            </div>
+          </div>
+
+          <!-- User Profile & Active Level Section -->
+          <div class="rounded-3xl p-6 sm:p-8 border flex flex-col md:flex-row md:items-center justify-between gap-6" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div class="flex items-start sm:items-center gap-4">
+              <div class="shrink-0">${meta.svg}</div>
+              <div>
+                <span class="badge-${meta.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full inline-block mb-1.5">
+                  CURRENT ENROLLED LEVEL
+                </span>
+                <h3 class="font-editorial text-2xl font-bold" style="color: var(--ink-primary);">
+                  ${meta.title} (${meta.bengaliSubtitle})
+                </h3>
+                <p class="font-bengali text-xs sm:text-sm mt-0.5" style="color: var(--ink-secondary);">
+                  ${meta.description}
+                </p>
+                ${
+                  assessOpt
+                    ? `<p class="font-bengali text-xs font-semibold mt-2" style="color: var(--accent-sage);">তোমার মূল্যায়ন: &ldquo;${escapeHtml(assessOpt.text)}&rdquo;</p>`
+                    : ''
+                }
+              </div>
+            </div>
+
+            <div class="flex flex-wrap sm:flex-col gap-2 shrink-0">
+              <a
+                href="add-words.html"
+                class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 hover:border-[#2D5A4C]"
+                style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.25); color: var(--accent-sage);"
+              >
+                <span>+ নতুন শব্দ যোগ করুন</span>
+                <span>&rarr;</span>
+              </a>
+              <a
+                href="index.html"
+                class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 hover:border-[#2D5A4C]"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                <span>লেভেল পরিবর্তন করুন</span>
+                <span>&rarr;</span>
+              </a>
+              <a
+                href="assessment.html"
+                class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 hover:border-[#2D5A4C]"
+                style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                <span>মূল্যায়ন পুনরায় দিন</span>
+                <span>&rarr;</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Daily Milestones -->
+          <div class="rounded-3xl p-6 sm:p-8 border space-y-4" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                  Daily Learning Milestones <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(আজকের মাইলফলক)</span>
+                </h3>
+                <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">প্রতিটি ধাপ সম্পন্ন করে আজকের প্রস্তুতি নিশ্চিত করুন:</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-bengali text-xs font-semibold" style="color: var(--ink-muted);">
+                  অর্জিত: ${milestones.filter((m) => m.done).length} / ${milestones.length}
+                </span>
+                <span class="font-editorial text-xs font-bold" style="color: var(--accent-sage);">
+                  ${Math.round((milestones.filter((m) => m.done).length / milestones.length) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            <!-- Milestone Progress Bar -->
+            <div class="vw-progress-track h-2 w-full rounded-full overflow-hidden">
+              <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${Math.round((milestones.filter((m) => m.done).length / milestones.length) * 100)}%;"></div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              ${milestones
+                .map((m) => {
+                  return `
+                    <div
+                      class="rounded-2xl p-4 border flex flex-col justify-between"
+                      style="
+                        background-color: ${m.done ? 'var(--accent-sage-soft)' : 'var(--bg-ivory)'};
+                        border-color: ${m.done ? 'rgba(45, 90, 76, 0.3)' : 'var(--border-subtle)'};
+                      "
+                    >
+                      <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                          <span class="text-xs font-bold ${m.done ? 'text-[#2D5A4C]' : 'text-gray-400'}">
+                            ${m.done ? '✓ অর্জিত' : '○ বাকি'}
+                          </span>
+                        </div>
+                        <h4 class="font-bengali text-sm font-bold" style="color: var(--ink-primary);">${m.label}</h4>
+                        <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">${m.desc}</p>
+                      </div>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+          </div>
+
+          <!-- Words Explored Today Detail List -->
+          <div class="rounded-3xl p-6 sm:p-8 border space-y-4" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                  Words Explored Today <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(${exploredList.length}টি শব্দ)</span>
+                </h3>
+                <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">আজকে তোমার বিস্তারিত শেখা শব্দসমূহের তালিকা:</p>
+              </div>
+
+              ${
+                exploredList.length > 0
+                  ? `
+                    <button
+                      type="button"
+                      onclick="resetDailyTracker()"
+                      class="font-bengali px-3 py-1.5 rounded-xl border text-xs font-bold text-red-600 hover:bg-red-50"
+                      style="border-color: rgba(220, 38, 38, 0.2);"
+                    >
+                      রিসেট করুন
+                    </button>
+                  `
+                  : ''
+              }
+            </div>
+
+            ${
+              exploredList.length === 0
+                ? `
+                  <div class="rounded-2xl p-8 border text-center" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                    <p class="font-bengali text-sm text-gray-500 mb-4">
+                      আজ এখনো কোনো শব্দ অন্বেষণ করা হয়নি। Learn সেকশনে গিয়ে শব্দে ক্লিক করে শেখা শুরু করুন!
+                    </p>
+                    <a
+                      href="learn.html"
+                      class="vw-btn-primary font-bengali px-6 py-2.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5"
+                    >
+                      <span>Learn সেকশনে শব্দ শিখুন</span>
+                      <span>&rarr;</span>
+                    </a>
+                  </div>
+                `
+                : `
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    ${exploredList
+                      .map((item) => {
+                        const sid = registerSpeakText(item.word);
+                        return `
+                          <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
+                              <div class="flex items-center gap-2">
+                                <strong class="font-editorial text-base sm:text-lg" style="color: var(--ink-primary);">${escapeHtml(item.word)}</strong>
+                                <button
+                                  type="button"
+                                  onclick="speakById(${sid}, this)"
+                                  class="vw-speak-btn vw-speak-main w-6 h-6 rounded-full text-xs"
+                                >
+                                  ${speakerIconSvg('w-3 h-3')}
+                                </button>
+                              </div>
+                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background-color: var(--surface-sand); color: var(--ink-secondary);">
+                                ${escapeHtml(item.levelTitle || 'Vocab')}
+                              </span>
+                            </div>
+                            <p class="font-bengali text-xs font-bold mb-1" style="color: var(--accent-sage);">${escapeHtml(item.meaningBn)}</p>
+                            <p class="text-xs line-clamp-2" style="color: var(--ink-secondary);">&ldquo;${escapeHtml(item.example)}&rdquo;</p>
+                          </div>
+                        `;
+                      })
+                      .join('')}
+                  </div>
+                `
+            }
+          </div>
+
+          <!-- Quick Navigation Hub -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <a
+              href="learn.html"
+              class="rounded-3xl p-6 border text-center hover:border-[#2D5A4C] transition-all"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+            >
+              <span class="text-2xl mb-2 block">📚</span>
+              <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">Continue Learning</h4>
+              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">ভোকাবুলারি কার্ড ও পাঠ্যক্রম পড়ুন</p>
+            </a>
+
+            <a
+              href="flashcards.html"
+              class="rounded-3xl p-6 border text-center hover:border-[#2D5A4C] transition-all"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+            >
+              <span class="text-2xl mb-2 block">🗂️</span>
+              <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">3D Flashcards</h4>
+              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">কার্ড উল্টিয়ে দ্রুত রিভিশন দিন</p>
+            </a>
+
+            <a
+              href="games.html"
+              class="rounded-3xl p-6 border text-center hover:border-[#2D5A4C] transition-all"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle);"
+            >
+              <span class="text-2xl mb-2 block">🎮</span>
+              <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">Memory Games</h4>
+              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">৪টি গেম খেলে পয়েন্ট সংগ্রহ করুন</p>
+            </a>
+          </div>
+
+        </div>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAppHeader('tracker');
+      renderAppFooter();
+      renderTrackerPage();
+    });
+  </script>
+</body>
+</html>

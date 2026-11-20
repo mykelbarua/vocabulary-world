@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assessment — Vocabulary World</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Fraunces, Plus Jakarta Sans, Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Shared Editorial Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Dark Mode Zero-Flash Initializer -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('vw_theme');
+        if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Shared Sidebar & Mobile Top Navigation -->
+  <div id="app-header"></div>
+
+  <!-- Main Content Layout (Adjusts margin based on sidebar state) -->
+  <div class="vw-main-layout flex-1 flex flex-col min-w-0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-11">
+      <div id="assessment-page-mount" class="vw-panel-reveal"></div>
+    </main>
+
+    <!-- Shared Editorial Footer -->
+    <div id="app-footer"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    // Read level from query param if provided
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramLevel = urlParams.get('level');
+    if (paramLevel && typeof CURRICULUM_DATA !== 'undefined' && CURRICULUM_DATA[paramLevel]) {
+      AppState.selectedLevel = paramLevel;
+      saveSetupToStorage(paramLevel, AppState.assessmentIndex);
+    }
+
+    function chooseAssessmentOption(optId) {
+      AppState.assessmentIndex = optId;
+      saveSetupToStorage(AppState.selectedLevel, optId);
+      renderAssessmentPage();
+    }
+
+    function submitAssessmentAndRedirect() {
+      if (!AppState.selectedLevel || !AppState.assessmentIndex) return;
+      saveSetupToStorage(AppState.selectedLevel, AppState.assessmentIndex);
+      window.location.href = 'learn.html';
+    }
+
+    function renderAssessmentPage() {
+      const mount = document.getElementById('assessment-page-mount');
+      const levelId = AppState.selectedLevel || 'beginner';
+      const meta = (typeof LEVEL_META !== 'undefined' && LEVEL_META.find((m) => m.id === levelId)) || (typeof LEVEL_META !== 'undefined' && LEVEL_META[0]);
+      if (!mount || !meta || typeof ASSESSMENT_OPTIONS === 'undefined') return;
+
+      mount.innerHTML = `
+        <div class="max-w-3xl mx-auto space-y-6">
+          <!-- Top Back Navigation -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <a
+              href="index.html"
+              class="font-bengali inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-bold transition-colors hover:border-[#2D5A4C]"
+              style="background-color: var(--surface-white); border-color: var(--border-subtle); color: var(--ink-primary);"
+            >
+              &larr; লেভেল নির্বাচনে ফিরুন (Back to Levels)
+            </a>
+
+            <span
+              class="badge-${meta.id} px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
+            >
+              SELECTED LEVEL: ${meta.title.toUpperCase()}
+            </span>
+          </div>
+
+          <!-- Assessment Card -->
+          <div class="rounded-3xl p-6 sm:p-9 border space-y-6" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <!-- Onboarding Step Progress -->
+            <div class="space-y-1.5 pb-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bengali font-semibold" style="color: var(--ink-secondary);">
+                  ধাপ ২/২: প্রাথমিক জ্ঞান মূল্যায়ন (Step 2 of 2)
+                </span>
+                <span class="font-editorial font-bold" style="color: var(--accent-sage);">
+                  ${AppState.assessmentIndex ? '100%' : '50%'}
+                </span>
+              </div>
+              <div class="vw-progress-track h-2 w-full rounded-full overflow-hidden">
+                <div class="vw-progress-bar h-full rounded-full bg-[#2D5A4C]" style="width: ${AppState.assessmentIndex ? '100%' : '50%'};"></div>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4 pb-5 border-b" style="border-color: var(--border-subtle);">
+              <div class="shrink-0">${meta.svg}</div>
+              <div>
+                <span class="badge-${meta.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full inline-block mb-1.5">
+                  SELECTED LEVEL: ${meta.title.toUpperCase()} (${meta.bengaliSubtitle})
+                </span>
+                <h1 class="font-bengali text-xl sm:text-2xl font-bold leading-snug" style="color: var(--ink-primary);">
+                  তোমার বর্তমান English Vocabulary Knowledge কেমন?
+                </h1>
+                <p class="font-bengali text-xs sm:text-sm mt-1" style="color: var(--ink-secondary);">
+                  নিচের ৪টি অপশন থেকে তোমার বর্তমান অবস্থার সাথে সবচেয়ে মানানসই উত্তরটি নির্বাচন করো:
+                </p>
+              </div>
+            </div>
+
+            <!-- 4 Single-Select Option Cards -->
+            <div role="radiogroup" aria-label="Vocabulary Knowledge Options" class="space-y-3">
+              ${ASSESSMENT_OPTIONS.map((opt) => {
+                const isSelected = AppState.assessmentIndex === opt.id;
+                return `
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="${isSelected ? 'true' : 'false'}"
+                    onclick="chooseAssessmentOption(${opt.id})"
+                    class="vw-assessment-option ${isSelected ? 'is-selected vw-correct-glow' : ''} w-full text-left rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 focus:outline-none transition-all"
+                  >
+                    <div class="flex items-center gap-3.5">
+                      <span
+                        class="w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0"
+                        style="
+                          border-color: ${isSelected ? 'var(--accent-sage)' : 'var(--border-hover)'};
+                          background-color: ${isSelected ? 'var(--accent-sage)' : 'var(--surface-white)'};
+                          color: ${isSelected ? '#FFFFFF' : 'var(--ink-secondary)'};
+                        "
+                      >
+                        ${isSelected ? '✓' : opt.id}
+                      </span>
+                      <span class="font-bengali text-sm sm:text-base font-bold" style="color: var(--ink-primary);">
+                        ${opt.text}
+                      </span>
+                    </div>
+
+                    ${
+                      isSelected
+                        ? `<span class="font-bengali text-xs font-bold px-2.5 py-1 rounded-full shrink-0" style="background-color: var(--surface-white); color: var(--accent-sage);">নির্বাচিত</span>`
+                        : ''
+                    }
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Continue Button (Saves answer and redirects to learn.html) -->
+            <div class="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="border-color: var(--border-subtle);">
+              <p class="font-bengali text-xs" style="color: var(--ink-muted);">
+                ${
+                  AppState.assessmentIndex
+                    ? 'Continue বাটনে ক্লিক করলে সরাসরি তোমার নির্বাচিত Level-এর পাঠ্যক্রম শুরু হবে।'
+                    : 'এগিয়ে যেতে ওপরের যেকোনো একটি অপশন নির্বাচন করো।'
+                }
+              </p>
+
+              <button
+                type="button"
+                onclick="submitAssessmentAndRedirect()"
+                ${!AppState.assessmentIndex ? 'disabled' : ''}
+                class="vw-btn-primary px-7 py-3.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shrink-0"
+              >
+                <span>Continue</span>
+                <span>&rarr;</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAppHeader('home');
+      renderAppFooter();
+      renderAssessmentPage();
+    });
+  </script>
+</body>
+</html>

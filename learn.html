@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learn Vocabulary & Curriculum — Vocabulary World</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Fraunces, Plus Jakarta Sans, Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Shared Editorial Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Dark Mode Zero-Flash Initializer -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('vw_theme');
+        if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Shared Sidebar & Mobile Top Navigation -->
+  <div id="app-header"></div>
+
+  <!-- Main Content Layout (Adjusts margin based on sidebar state) -->
+  <div class="vw-main-layout flex-1 flex flex-col min-w-0">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-9">
+      <div id="learn-page-mount" class="vw-panel-reveal"></div>
+    </main>
+
+    <!-- Shared Editorial Footer -->
+    <div id="app-footer"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    let activeTab = 'all'; // 'all' | 'vocab' | 'curriculum' | 'stories'
+    const openRelations = {}; // { [wordId]: { type, word, meaningBn, explanationBn } }
+
+    // Support query param ?level=xxx
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramLevel = urlParams.get('level');
+    if (paramLevel && typeof CURRICULUM_DATA !== 'undefined' && CURRICULUM_DATA[paramLevel]) {
+      AppState.selectedLevel = paramLevel;
+      saveSetupToStorage(paramLevel, AppState.assessmentIndex);
+    }
+
+    function switchLevel(newLevel) {
+      if (!CURRICULUM_DATA[newLevel]) return;
+      PronunciationEngine.stopAll();
+      AppState.selectedLevel = newLevel;
+      saveSetupToStorage(newLevel, AppState.assessmentIndex);
+      renderAppHeader('learn');
+      const mount = document.getElementById('learn-page-mount');
+      if (mount) {
+        mount.className = 'vw-view-enter';
+      }
+      renderLearnPage();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateLevelProgressBar() {
+      const lvl = CURRICULUM_DATA[AppState.selectedLevel || 'beginner'];
+      if (!lvl) return;
+      const exploredLevelCount = lvl.words.filter((w) => AppState.tracker.exploredWordIds.includes(w.id)).length;
+      const levelProgressPct = Math.round((exploredLevelCount / lvl.words.length) * 100);
+      const bar = document.getElementById('level-progress-bar');
+      const countEl = document.getElementById('level-progress-count');
+      if (bar) bar.style.width = `${levelProgressPct}%`;
+      if (countEl) countEl.textContent = `${exploredLevelCount}/${lvl.words.length}`;
+    }
+
+    function setFilterTab(tabId) {
+      PronunciationEngine.stopAll();
+      activeTab = tabId;
+      const mount = document.getElementById('learn-page-mount');
+      if (mount) {
+        mount.classList.remove('vw-view-enter');
+        void mount.offsetWidth;
+        mount.classList.add('vw-view-enter');
+      }
+      renderLearnPage();
+    }
+
+    function toggleWordRelation(wordId, relType, index) {
+      const lvl = CURRICULUM_DATA[AppState.selectedLevel];
+      if (!lvl) return;
+      const wordObj = lvl.words.find((w) => w.id === wordId);
+      if (!wordObj) return;
+
+      const list = relType === 'synonym' ? wordObj.synonyms : wordObj.antonyms;
+      const item = list && list[index];
+      if (!item) return;
+
+      trackWordExplored(wordId);
+
+      const current = openRelations[wordId];
+      if (current && current.type === relType && current.word === item.word) {
+        delete openRelations[wordId];
+      } else {
+        openRelations[wordId] = {
+          type: relType,
+          word: item.word,
+          meaningBn: item.meaningBn,
+          explanationBn: item.explanationBn
+        };
+      }
+
+      renderLearnPage();
+    }
+
+    function buildVocabularyCardHTML(item) {
+      const wordSpeakId = registerSpeakText(item.word);
+      const exSpeakId = registerSpeakText(item.example);
+      const activeRel = openRelations[item.id];
+
+      const synPills = item.synonyms
+        .map((syn, idx) => {
+          const synSpeakId = registerSpeakText(syn.word);
+          const isActive = activeRel && activeRel.type === 'synonym' && activeRel.word === syn.word;
+          return `
+            <div class="vw-pill-syn ${isActive ? 'active' : ''} inline-flex items-center rounded-full overflow-hidden">
+              <button
+                type="button"
+                onclick="toggleWordRelation('${item.id}', 'synonym', ${idx})"
+                class="px-3 py-1.5 text-xs font-semibold focus:outline-none"
+              >
+                ${escapeHtml(syn.word)}
+              </button>
+              <button
+                type="button"
+                onclick="event.stopPropagation(); trackWordExplored('${item.id}'); speakById(${synSpeakId}, this)"
+                aria-label="Pronounce ${escapeHtml(syn.word)}"
+                class="vw-speak-btn pr-2.5 pl-1 py-1.5 opacity-85 hover:opacity-100"
+              >
+                ${speakerIconSvg('w-3 h-3')}
+              </button>
+            </div>
+          `;
+        })
+        .join('');
+
+      const antPills = item.antonyms
+        .map((ant, idx) => {
+          const antSpeakId = registerSpeakText(ant.word);
+          const isActive = activeRel && activeRel.type === 'antonym' && activeRel.word === ant.word;
+          return `
+            <div class="vw-pill-ant ${isActive ? 'active' : ''} inline-flex items-center rounded-full overflow-hidden">
+              <button
+                type="button"
+                onclick="toggleWordRelation('${item.id}', 'antonym', ${idx})"
+                class="px-3 py-1.5 text-xs font-semibold focus:outline-none"
+              >
+                ${escapeHtml(ant.word)}
+              </button>
+              <button
+                type="button"
+                onclick="event.stopPropagation(); trackWordExplored('${item.id}'); speakById(${antSpeakId}, this)"
+                aria-label="Pronounce ${escapeHtml(ant.word)}"
+                class="vw-speak-btn pr-2.5 pl-1 py-1.5 opacity-85 hover:opacity-100"
+              >
+                ${speakerIconSvg('w-3 h-3')}
+              </button>
+            </div>
+          `;
+        })
+        .join('');
+
+      const inlineExplanationBox = activeRel
+        ? `
+          <div
+            class="vw-meaning-reveal mt-3 rounded-2xl p-4 border shadow-xs"
+            style="
+              background-color: ${activeRel.type === 'synonym' ? 'var(--accent-sage-soft)' : 'var(--accent-terracotta-soft)'};
+              border-color: ${activeRel.type === 'synonym' ? 'rgba(45, 90, 76, 0.25)' : 'rgba(194, 109, 83, 0.28)'};
+            "
+          >
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span
+                class="font-bengali text-[11px] font-bold uppercase tracking-wider"
+                style="color: ${activeRel.type === 'synonym' ? 'var(--accent-sage)' : 'var(--accent-terracotta)'};"
+              >
+                বাংলা অর্থ ও ব্যাখ্যা &bull; ${activeRel.type === 'synonym' ? 'Synonym (সমার্থক)' : 'Antonym (বিপরীতার্থক)'}
+              </span>
+              <span class="font-editorial text-sm font-bold" style="color: var(--ink-primary);">
+                ${escapeHtml(activeRel.word)}
+              </span>
+            </div>
+            <p class="font-bengali text-sm font-bold" style="color: var(--ink-primary);">
+              অর্থ: ${escapeHtml(activeRel.meaningBn)}
+            </p>
+            <p class="font-bengali text-xs mt-1 leading-relaxed" style="color: var(--ink-secondary);">
+              ${escapeHtml(activeRel.explanationBn)}
+            </p>
+          </div>
+        `
+        : '';
+
+      return `
+        <article class="vw-word-card rounded-3xl p-5 sm:p-7">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Left Column: Word with Automatic Image Frame, Bengali Meaning & Example -->
+            <div class="lg:col-span-6 space-y-3.5">
+              
+              <!-- Word Header Row paired with Picture Frame -->
+              <div class="flex items-start gap-3.5 sm:gap-4">
+                <!-- 88x88px (96x96px desktop) Picture Frame with Loading Skeleton -->
+                <div
+                  id="word-img-frame-${item.id}"
+                  class="vw-word-img-frame"
+                >
+                  <div class="animate-pulse w-full h-full flex flex-col items-center justify-center p-2 text-center" style="background-color: var(--surface-sand);">
+                    <svg class="w-6 h-6 opacity-40 mb-1" style="color: var(--accent-sage);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="text-[9px] font-mono tracking-wider opacity-60 uppercase" style="color: var(--ink-muted);">Photo</span>
+                  </div>
+                </div>
+
+                <!-- Word Title, Badges & Bengali Meaning -->
+                <div class="flex-1 min-w-0 space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-1.5">
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-editorial text-2xl sm:text-3xl font-bold" style="color: var(--ink-primary);">
+                        ${escapeHtml(item.word)}
+                      </h3>
+                      <button
+                        type="button"
+                        onclick="trackWordExplored('${item.id}'); speakById(${wordSpeakId}, this)"
+                        class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0"
+                      >
+                        ${speakerIconSvg('w-3.5 h-3.5')}
+                        <span class="hidden sm:inline">Listen</span>
+                      </button>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <span class="text-xs font-mono" style="color: var(--ink-muted);">${escapeHtml(item.ipa)}</span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background-color: var(--surface-sand); color: var(--ink-secondary);">
+                        ${escapeHtml(item.pos)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Bengali Meaning -->
+                  <div class="rounded-2xl px-3.5 py-2 border" style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.2);">
+                    <span class="font-bengali text-[10px] font-bold uppercase tracking-wider block" style="color: var(--accent-sage);">
+                      বাংলা অর্থ (Bengali Meaning)
+                    </span>
+                    <p class="font-bengali text-sm sm:text-base font-bold mt-0.5 leading-snug" style="color: var(--ink-primary);">
+                      ${escapeHtml(item.meaningBn)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p class="text-xs sm:text-sm leading-relaxed" style="color: var(--ink-secondary);">
+                ${escapeHtml(item.explanationEn)}
+              </p>
+
+              <!-- Example Sentence with Speaker + Bengali Translation -->
+              <div class="rounded-2xl p-4 border space-y-1.5" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--ink-muted);">
+                    EXAMPLE SENTENCE
+                  </span>
+                  <button
+                    type="button"
+                    onclick="trackWordExplored('${item.id}'); speakById(${exSpeakId}, this)"
+                    class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1"
+                  >
+                    ${speakerIconSvg('w-3 h-3')}
+                    <span>Listen</span>
+                  </button>
+                </div>
+                <p class="text-xs sm:text-sm font-medium leading-relaxed" style="color: var(--ink-primary);">
+                  &ldquo;${escapeHtml(item.example)}&rdquo;
+                </p>
+                <p class="font-bengali text-xs leading-relaxed" style="color: var(--ink-secondary);">
+                  (${escapeHtml(item.exampleBn)})
+                </p>
+              </div>
+            </div>
+
+            <!-- Right Column: 5 Synonyms + 5 Antonyms + Inline Bengali Meaning & Explanation -->
+            <div class="lg:col-span-6 lg:border-l lg:pl-6 space-y-4" style="border-color: var(--border-subtle);">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <span class="font-bengali text-xs font-bold" style="color: var(--accent-sage);">
+                    Synonyms (সমার্থক শব্দ — ৫টি)
+                  </span>
+                  <span class="font-bengali text-[11px]" style="color: var(--ink-muted);">
+                    শব্দে ক্লিক করলে বাংলা ব্যাখ্যা খুলবে
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  ${synPills}
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <span class="font-bengali text-xs font-bold" style="color: var(--accent-terracotta);">
+                    Antonyms (বিপরীতার্থক শব্দ — ৫টি)
+                  </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  ${antPills}
+                </div>
+              </div>
+
+              ${inlineExplanationBox}
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function buildCurriculumModulesHTML(lvl) {
+      let sectionsHTML = '';
+
+      // BEGINNER MODULES
+      if (lvl.dailyWords) {
+        sectionsHTML += `
+          <div class="rounded-3xl p-5 sm:p-7 border space-y-4" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div>
+              <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                Daily Essential Words <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(দৈনন্দিন প্রয়োজনীয় শব্দ)</span>
+              </h3>
+              <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">প্রতিদিনের কথাবার্তায় ব্যবহৃত সহজ শব্দ ও বাক্য:</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${lvl.dailyWords
+                .map((dw) => {
+                  const sid = registerSpeakText(dw.example);
+                  const wid = registerSpeakText(dw.word);
+                  return `
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-2">
+                          <strong class="font-editorial text-base sm:text-lg" style="color: var(--ink-primary);">${escapeHtml(dw.word)}</strong>
+                          <button type="button" onclick="speakById(${wid}, this)" aria-label="Pronounce ${escapeHtml(dw.word)}" class="vw-speak-btn vw-speak-main w-7 h-7 rounded-full">${speakerIconSvg('w-3.5 h-3.5')}</button>
+                        </div>
+                        <button type="button" onclick="speakById(${sid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                      </div>
+                      <p class="font-bengali text-xs font-bold mb-1.5" style="color: var(--accent-sage);">${escapeHtml(dw.meaningBn)}</p>
+                      <p class="text-xs sm:text-sm" style="color: var(--ink-primary);">&ldquo;${escapeHtml(dw.example)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(dw.exampleBn)})</p>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      if (lvl.conversations) {
+        sectionsHTML += `
+          <div class="rounded-3xl p-5 sm:p-7 border space-y-4" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div>
+              <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                Easy Conversations <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(সহজ ইংরেজি কথোপকথন)</span>
+              </h3>
+              <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">প্রতিটি সংলাপের পাশে Listen বাটনে ক্লিক করে উচ্চারণ শুনুন:</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              ${lvl.conversations
+                .map(
+                  (conv) => `
+                    <div class="rounded-2xl p-5 border space-y-3" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <h4 class="font-editorial text-base sm:text-lg font-bold" style="color: var(--accent-sage);">${escapeHtml(conv.title)}</h4>
+                      ${conv.lines
+                        .map((line) => {
+                          const lid = registerSpeakText(line.en);
+                          return `
+                            <div class="rounded-xl p-3.5 border flex items-start justify-between gap-3" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+                              <div>
+                                <span class="text-[11px] font-bold uppercase tracking-wider" style="color: var(--accent-terracotta);">${escapeHtml(line.speaker)}:</span>
+                                <p class="text-xs sm:text-sm font-medium mt-0.5" style="color: var(--ink-primary);">${escapeHtml(line.en)}</p>
+                                <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(line.bn)})</p>
+                              </div>
+                              <button type="button" onclick="speakById(${lid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  `
+                )
+                .join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // INTERMEDIATE MODULES
+      if (lvl.phrasalVerbs) {
+        sectionsHTML += `
+          <div class="rounded-3xl p-5 sm:p-7 border space-y-5" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div>
+              <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                Phrasal Verbs, Common Idioms &amp; Collocations <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(বাক্যাংশ ক্রিয়া, বাগধারা ও শব্দজোড়)</span>
+              </h3>
+              <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">স্বাভাবিক ও সাবলীল ইংরেজি বলার জন্য অপরিহার্য অভিব্যক্তি:</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${lvl.phrasalVerbs
+                .map((pv) => {
+                  const sid = registerSpeakText(pv.example);
+                  return `
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">Phrasal Verb</span>
+                        <button type="button" onclick="speakById(${sid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                      </div>
+                      <h4 class="font-editorial text-base font-bold" style="color: var(--ink-primary);">${escapeHtml(pv.phrase)} &mdash; <span class="font-bengali text-xs" style="color: var(--accent-sage);">${escapeHtml(pv.meaningBn)}</span></h4>
+                      <p class="text-xs sm:text-sm mt-1.5" style="color: var(--ink-primary);">&ldquo;${escapeHtml(pv.example)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(pv.exampleBn)})</p>
+                    </div>
+                  `;
+                })
+                .join('')}
+
+              ${(lvl.idioms || [])
+                .map((idm) => {
+                  const sid = registerSpeakText(idm.example);
+                  return `
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: var(--accent-terracotta-soft); color: var(--accent-terracotta);">Common Idiom</span>
+                        <button type="button" onclick="speakById(${sid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                      </div>
+                      <h4 class="font-editorial text-base font-bold" style="color: var(--ink-primary);">${escapeHtml(idm.idiom)} &mdash; <span class="font-bengali text-xs" style="color: var(--accent-terracotta);">${escapeHtml(idm.meaningBn)}</span></h4>
+                      <p class="text-xs sm:text-sm mt-1.5" style="color: var(--ink-primary);">&ldquo;${escapeHtml(idm.example)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(idm.exampleBn)})</p>
+                    </div>
+                  `;
+                })
+                .join('')}
+
+              ${(lvl.collocations || [])
+                .map((col) => {
+                  const sid = registerSpeakText(col.example);
+                  return `
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: var(--surface-sand); color: var(--ink-primary);">Collocation</span>
+                        <button type="button" onclick="speakById(${sid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                      </div>
+                      <h4 class="font-editorial text-base font-bold" style="color: var(--ink-primary);">${escapeHtml(col.pair)} &mdash; <span class="font-bengali text-xs" style="color: var(--accent-sage);">${escapeHtml(col.meaningBn)}</span></h4>
+                      <p class="text-xs sm:text-sm mt-1.5" style="color: var(--ink-primary);">&ldquo;${escapeHtml(col.example)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(col.exampleBn)})</p>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+
+            ${
+              lvl.sentencePatterns
+                ? `
+                  <div class="pt-2 space-y-3">
+                    <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">
+                      Sentence Making Patterns <span class="font-bengali text-xs font-semibold" style="color: var(--accent-sage);">(বাক্য গঠনের নিয়ম ও কাঠামো)</span>
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ${lvl.sentencePatterns
+                        .map((sp) => {
+                          const sid = registerSpeakText(sp.example);
+                          return `
+                            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                              <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">${escapeHtml(sp.pattern)}</span>
+                                <button type="button" onclick="speakById(${sid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                              </div>
+                              <p class="font-bengali text-xs font-bold mb-1.5" style="color: var(--accent-terracotta);">${escapeHtml(sp.meaningBn)}</p>
+                              <p class="text-xs sm:text-sm font-medium" style="color: var(--ink-primary);">&ldquo;${escapeHtml(sp.example)}&rdquo;</p>
+                              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(sp.exampleBn)})</p>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  </div>
+                `
+                : ''
+            }
+          </div>
+        `;
+      }
+
+      // ADVANCED MODULES
+      if (lvl.academicVocabulary) {
+        sectionsHTML += `
+          <div class="rounded-3xl p-5 sm:p-7 border space-y-5" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div>
+              <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                C1&ndash;C2 Academic Highlights &amp; Formal English <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(উচ্চতর একাডেমিক ও আনুষ্ঠানিক ইংরেজি)</span>
+              </h3>
+              <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">গবেষণাপত্র, প্রবন্ধ এবং উচ্চপর্যায়ের আলোচনায় ব্যবহৃত শব্দ ও রূপান্তর:</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${lvl.academicVocabulary
+                .map((av) => {
+                  const tid = registerSpeakText(av.term);
+                  const eid = registerSpeakText(av.example);
+                  return `
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-1.5">
+                        <div class="flex items-center gap-2">
+                          <strong class="font-editorial text-base sm:text-lg" style="color: var(--ink-primary);">${escapeHtml(av.term)}</strong>
+                          <button type="button" onclick="speakById(${tid}, this)" aria-label="Pronounce ${escapeHtml(av.term)}" class="vw-speak-btn vw-speak-main w-7 h-7 rounded-full">${speakerIconSvg('w-3.5 h-3.5')}</button>
+                          <span class="text-xs font-mono" style="color: var(--ink-muted);">${escapeHtml(av.ipa)}</span>
+                        </div>
+                        <button type="button" onclick="speakById(${eid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                      </div>
+                      <p class="font-bengali text-xs font-bold mb-1.5" style="color: var(--accent-sage);">${escapeHtml(av.meaningBn)}</p>
+                      <p class="text-xs sm:text-sm" style="color: var(--ink-primary);">&ldquo;${escapeHtml(av.example)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(av.exampleBn)})</p>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+
+            ${
+              lvl.formalTransformations
+                ? `
+                  <div class="space-y-3 pt-1">
+                    <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">
+                      Formal vs. Casual Transformations <span class="font-bengali text-xs font-semibold" style="color: var(--accent-sage);">(সাধারণ থেকে আনুষ্ঠানিক রূপান্তর)</span>
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ${lvl.formalTransformations
+                        .map((ft) => {
+                          const eid = registerSpeakText(ft.example);
+                          return `
+                            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                              <div class="flex items-center justify-between gap-2 mb-2">
+                                <span class="text-[11px] font-semibold line-through" style="color: var(--ink-muted);">${escapeHtml(ft.casual)}</span>
+                                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">&rarr; ${escapeHtml(ft.formal)}</span>
+                              </div>
+                              <p class="font-bengali text-xs font-bold mb-1" style="color: var(--accent-terracotta);">${escapeHtml(ft.meaningBn)}</p>
+                              <div class="flex items-start justify-between gap-2">
+                                <div>
+                                  <p class="text-xs sm:text-sm" style="color: var(--ink-primary);">&ldquo;${escapeHtml(ft.example)}&rdquo;</p>
+                                  <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(ft.exampleBn)})</p>
+                                </div>
+                                <button type="button" onclick="speakById(${eid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                              </div>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  </div>
+                `
+                : ''
+            }
+
+            ${
+              lvl.wordFormation
+                ? `
+                  <div class="space-y-3 pt-1">
+                    <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">
+                      Word Formation Families <span class="font-bengali text-xs font-semibold" style="color: var(--accent-sage);">(Noun / Verb / Adj / Adv রূপান্তর)</span>
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ${lvl.wordFormation
+                        .map((wf) => {
+                          const eid = registerSpeakText(wf.example);
+                          return `
+                            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                              <div class="flex items-center justify-between gap-2 mb-1">
+                                <strong class="font-editorial text-base" style="color: var(--ink-primary);">${escapeHtml(wf.root)}</strong>
+                                <button type="button" onclick="speakById(${eid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                              </div>
+                              <p class="text-xs font-bold mb-1.5" style="color: var(--accent-sage);">${escapeHtml(wf.forms)}</p>
+                              <p class="text-xs sm:text-sm" style="color: var(--ink-primary);">&ldquo;${escapeHtml(wf.example)}&rdquo;</p>
+                              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(wf.exampleBn)})</p>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  </div>
+                `
+                : ''
+            }
+          </div>
+        `;
+      }
+
+      // PRO MODULES
+      if (lvl.businessTemplates) {
+        sectionsHTML += `
+          <div class="rounded-3xl p-5 sm:p-7 border space-y-5" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div>
+              <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                Business &amp; Corporate English <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">(পেশাদার কর্মক্ষেত্র ও নির্বাহী যোগাযোগ)</span>
+              </h3>
+              <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">কর্পোরেট ইমেইল, মিটিং এবং কৌশলগত সিদ্ধান্তের উচ্চমানের অভিব্যক্তি:</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${lvl.businessTemplates
+                .map((bt) => {
+                  const sid = registerSpeakText(bt.en);
+                  return `
+                    <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                      <div class="flex items-center justify-between gap-2 mb-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">${escapeHtml(bt.context)}</span>
+                        <button type="button" onclick="speakById(${sid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                      </div>
+                      <p class="text-xs sm:text-sm font-medium leading-relaxed" style="color: var(--ink-primary);">&ldquo;${escapeHtml(bt.en)}&rdquo;</p>
+                      <p class="font-bengali text-xs mt-1.5" style="color: var(--ink-secondary);">(${escapeHtml(bt.bn)})</p>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+
+            ${
+              lvl.executiveExpressions
+                ? `
+                  <div class="space-y-3 pt-1">
+                    <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">
+                      Executive Expressions <span class="font-bengali text-xs font-semibold" style="color: var(--accent-sage);">(উচ্চপর্যায়ের বিশ্লেষণধর্মী অভিব্যক্তি)</span>
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ${lvl.executiveExpressions
+                        .map((ae) => {
+                          const eid = registerSpeakText(ae.example);
+                          return `
+                            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                              <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: #ECEAF6; color: #4A447A;">Executive Expression</span>
+                                <button type="button" onclick="speakById(${eid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                              </div>
+                              <h5 class="font-editorial text-base font-bold" style="color: var(--ink-primary);">${escapeHtml(ae.expression)} &mdash; <span class="font-bengali text-xs" style="color: var(--accent-sage);">${escapeHtml(ae.meaningBn)}</span></h5>
+                              <p class="text-xs sm:text-sm mt-1" style="color: var(--ink-primary);">&ldquo;${escapeHtml(ae.example)}&rdquo;</p>
+                              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(ae.exampleBn)})</p>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  </div>
+                `
+                : ''
+            }
+
+            ${
+              lvl.complexStructures
+                ? `
+                  <div class="space-y-3 pt-1">
+                    <h4 class="font-editorial text-lg font-bold" style="color: var(--ink-primary);">
+                      Complex Sentence Structures <span class="font-bengali text-xs font-semibold" style="color: var(--accent-sage);">(উন্নত ও জটিল বাক্য কাঠামো)</span>
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ${lvl.complexStructures
+                        .map((cs) => {
+                          const eid = registerSpeakText(cs.example);
+                          return `
+                            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                              <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded" style="background-color: var(--accent-terracotta-soft); color: var(--accent-terracotta);">${escapeHtml(cs.pattern)}</span>
+                                <button type="button" onclick="speakById(${eid}, this)" class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0">${speakerIconSvg('w-3 h-3')}<span>Listen</span></button>
+                              </div>
+                              <p class="font-bengali text-xs font-bold mb-1.5" style="color: var(--accent-sage);">${escapeHtml(cs.meaningBn)}</p>
+                              <p class="text-xs sm:text-sm font-medium" style="color: var(--ink-primary);">&ldquo;${escapeHtml(cs.example)}&rdquo;</p>
+                              <p class="font-bengali text-xs mt-1" style="color: var(--ink-secondary);">(${escapeHtml(cs.exampleBn)})</p>
+                            </div>
+                          `;
+                        })
+                        .join('')}
+                    </div>
+                  </div>
+                `
+                : ''
+            }
+          </div>
+        `;
+      }
+
+      return sectionsHTML;
+    }
+
+    function buildStoriesHTML(lvl) {
+      if (!lvl.stories) return '';
+
+      const storyHeaders = {
+        beginner: { en: '2 Short Moral Stories', bn: '(ছোটদের শিক্ষণীয় ইংরেজি গল্প ও পাঠ)' },
+        intermediate: { en: '2 Intermediate Reading Stories', bn: '(মধ্যম স্তরের ইংরেজি গল্প ও পাঠ)' },
+        advanced: { en: '2 Analytical Passages', bn: '(উচ্চতর বিশ্লেষণধর্মী পাঠ ও প্রবন্ধ)' },
+        pro: { en: '2 Executive Readings', bn: '(পেশাদার কেস স্টাডি ও পাঠ)' }
+      };
+      const sh = storyHeaders[lvl.id] || { en: 'Reading Passages', bn: '(গল্প ও পাঠ অনুশীলন)' };
+
+      return `
+        <div class="rounded-3xl p-5 sm:p-7 border space-y-5" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+          <div>
+            <h3 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+              ${sh.en} <span class="font-bengali text-sm font-semibold" style="color: var(--accent-sage);">${sh.bn}</span>
+            </h3>
+            <p class="font-bengali text-xs mt-0.5" style="color: var(--ink-secondary);">প্রতিটি বাক্যের পাশে Listen বাটনে ক্লিক করে ইংরেজি উচ্চারণ শুনুন এবং নিচে বাংলা অনুবাদ পড়ুন:</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            ${lvl.stories
+              .map(
+                (story) => `
+                  <div class="rounded-2xl p-5 border space-y-3" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+                    <h4 class="font-editorial text-lg font-bold" style="color: var(--accent-terracotta);">${escapeHtml(story.title)}</h4>
+                    ${story.sentences
+                      .map((s) => {
+                        const sid = registerSpeakText(s.en);
+                        return `
+                          <div class="rounded-xl p-3.5 border flex items-start justify-between gap-3" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+                            <div>
+                              <p class="text-xs sm:text-sm font-medium leading-relaxed" style="color: var(--ink-primary);">${escapeHtml(s.en)}</p>
+                              <p class="font-bengali text-xs mt-1 leading-relaxed" style="color: var(--ink-secondary);">(${escapeHtml(s.bn)})</p>
+                            </div>
+                            <button
+                              type="button"
+                              onclick="speakById(${sid}, this)"
+                              class="vw-speak-btn vw-speak-main px-2.5 py-1 rounded-full text-xs font-bold gap-1 shrink-0"
+                            >
+                              ${speakerIconSvg('w-3 h-3')}
+                              <span>Listen</span>
+                            </button>
+                          </div>
+                        `;
+                      })
+                      .join('')}
+                  </div>
+                `
+              )
+              .join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function buildCompactTrackerHTML() {
+      const t = AppState.tracker;
+      return `
+        <div class="rounded-3xl p-5 sm:p-7 border space-y-4" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full inline-block mb-1" style="background-color: var(--accent-sage-soft); color: var(--accent-sage);">
+                DAILY STUDY ACTIVITY &bull; আজকের অগ্রগতি
+              </span>
+              <h3 class="font-editorial text-xl font-bold" style="color: var(--ink-primary);">
+                Today&rsquo;s Learning Progress
+              </h3>
+            </div>
+            <a
+              href="tracker.html"
+              class="font-bengali text-xs font-bold hover:underline"
+              style="color: var(--accent-sage);"
+            >
+              বিস্তারিত ড্যাশবোর্ড দেখুন (View Full Tracker) &rarr;
+            </a>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <span class="text-xs font-semibold block" style="color: var(--ink-secondary);">Words Explored</span>
+              <span class="font-bengali text-[11px] block" style="color: var(--ink-muted);">শব্দ অনুশীলন</span>
+              <strong id="tracker-words-explored" class="font-editorial text-2xl font-bold block mt-1" style="color: var(--accent-sage);">
+                ${t.exploredWordIds.length}
+              </strong>
+            </div>
+
+            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <span class="text-xs font-semibold block" style="color: var(--ink-secondary);">Flashcards Done</span>
+              <span class="font-bengali text-[11px] block" style="color: var(--ink-muted);">সম্পন্ন ফ্ল্যাশকার্ড</span>
+              <strong id="tracker-flashcards-done" class="font-editorial text-2xl font-bold block mt-1" style="color: var(--ink-primary);">
+                ${t.flashcardsCompleted}
+              </strong>
+            </div>
+
+            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <span class="text-xs font-semibold block" style="color: var(--ink-secondary);">Game Score</span>
+              <span class="font-bengali text-[11px] block" style="color: var(--ink-muted);">গেম স্কোর</span>
+              <strong id="tracker-game-score" class="font-editorial text-2xl font-bold block mt-1" style="color: var(--accent-terracotta);">
+                ${t.gameScore}
+              </strong>
+            </div>
+
+            <div class="rounded-2xl p-4 border" style="background-color: var(--bg-ivory); border-color: var(--border-subtle);">
+              <span class="text-xs font-semibold block" style="color: var(--ink-secondary);">Quiz Answered</span>
+              <span class="font-bengali text-[11px] block" style="color: var(--ink-muted);">কুইজ উত্তর</span>
+              <strong id="tracker-quiz-answered" class="font-editorial text-2xl font-bold block mt-1" style="color: var(--accent-sage);">
+                ${t.quizAnswered}
+              </strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLearnPage() {
+      const mount = document.getElementById('learn-page-mount');
+      const levelId = AppState.selectedLevel || 'beginner';
+      const lvl = CURRICULUM_DATA[levelId];
+      const meta = LEVEL_META.find((m) => m.id === levelId);
+      const assessOpt = typeof ASSESSMENT_OPTIONS !== 'undefined' ? ASSESSMENT_OPTIONS.find((o) => o.id === AppState.assessmentIndex) : null;
+      if (!mount || !lvl || !meta) return;
+
+      const tabItems = [
+        { id: 'all', label: 'All Sections (সবগুলো)' },
+        { id: 'vocab', label: `Vocabulary Cards (${lvl.words.length}টি শব্দ)` },
+        { id: 'curriculum', label: 'Curriculum (পাঠ্যক্রম)' },
+        { id: 'stories', label: 'Stories & Passages (গল্প)' }
+      ];
+
+      const showVocab = activeTab === 'all' || activeTab === 'vocab';
+      const showCurriculum = activeTab === 'all' || activeTab === 'curriculum';
+      const showStories = activeTab === 'all' || activeTab === 'stories';
+
+      const exploredLevelCount = lvl.words.filter((w) => AppState.tracker.exploredWordIds.includes(w.id)).length;
+      const levelProgressPct = Math.round((exploredLevelCount / lvl.words.length) * 100);
+
+      mount.innerHTML = `
+        <div class="space-y-8">
+          <!-- Sticky Sub-Bar with Quick Level Switcher & Smooth Progress Bar -->
+          <div
+            class="sticky top-16 z-20 rounded-2xl p-3 border backdrop-blur-md flex flex-wrap items-center justify-between gap-3 shadow-sm"
+            style="background-color: rgba(255, 255, 255, 0.95); border-color: var(--border-subtle);"
+          >
+            <a
+              href="index.html"
+              class="font-bengali inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors hover:border-[#2D5A4C]"
+              style="background-color: var(--bg-ivory); border-color: var(--border-subtle); color: var(--ink-primary);"
+            >
+              &larr; লেভেল নির্বাচন (All Levels)
+            </a>
+
+            <!-- Quick Level Switcher Pills -->
+            <div class="flex items-center gap-1 overflow-x-auto py-0.5">
+              ${LEVEL_META.map((lm) => {
+                const isCur = lm.id === levelId;
+                return `
+                  <button
+                    type="button"
+                    onclick="switchLevel('${lm.id}')"
+                    class="font-bengali px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                      isCur
+                        ? 'bg-[#2D5A4C] text-white shadow-sm'
+                        : 'bg-[#F3EFEA] text-[#5C6660] hover:text-[#1E2421]'
+                    }"
+                  >
+                    ${lm.title}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Level Progress Bar Widget -->
+            <div class="flex items-center gap-2">
+              <span class="hidden sm:inline font-bengali text-xs font-semibold" style="color: var(--ink-secondary);">
+                অগ্রগতি: <strong id="level-progress-count" class="text-[#2D5A4C]">${exploredLevelCount}/${lvl.words.length}</strong>
+              </span>
+              <div class="w-20 sm:w-28 h-2 vw-progress-track border border-[#E6E1D8]">
+                <div id="level-progress-bar" class="vw-progress-bar" style="width: ${levelProgressPct}%;"></div>
+              </div>
+            </div>
+
+            <!-- Active Assessment Badge -->
+            ${
+              assessOpt
+                ? `<span class="hidden xl:inline-block font-bengali px-3 py-1 rounded-full text-xs font-semibold border" style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.22); color: var(--accent-sage);">জ্ঞান স্তর: ${escapeHtml(assessOpt.text)}</span>`
+                : ''
+            }
+          </div>
+
+          <!-- Level Hero Banner -->
+          <div class="rounded-3xl p-6 sm:p-8 border flex flex-col sm:flex-row sm:items-center justify-between gap-5" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <div class="flex items-start sm:items-center gap-4">
+              <div class="shrink-0">${meta.svg}</div>
+              <div>
+                <span class="badge-${lvl.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full inline-block mb-1.5">
+                  ${meta.badge}
+                </span>
+                <h1 class="font-editorial text-2xl sm:text-4xl font-bold" style="color: var(--ink-primary);">
+                  ${lvl.title} Vocabulary &amp; Curriculum
+                </h1>
+                <p class="font-bengali text-xs sm:text-sm mt-1" style="color: var(--ink-secondary);">
+                  ${lvl.bengaliSubtitle}
+                </p>
+              </div>
+            </div>
+
+            <!-- Quick Jump to Interactive Practice & Add Words -->
+            <div class="flex flex-wrap sm:flex-col gap-2 shrink-0">
+              <a
+                href="flashcards.html"
+                class="vw-btn-primary font-bengali px-4 py-2.5 rounded-2xl text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center"
+              >
+                <span>3D Flashcards অনুশীলন</span>
+                <span>&rarr;</span>
+              </a>
+              <a
+                href="games.html"
+                class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center hover:border-[#2D5A4C]"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                <span>Memory Games খেলুন</span>
+                <span>&rarr;</span>
+              </a>
+              <a
+                href="add-words.html?level=${lvl.id}"
+                class="font-bengali px-4 py-2.5 rounded-2xl border text-xs font-bold inline-flex items-center justify-center gap-1.5 text-center transition-all hover:border-[#2D5A4C]"
+                style="background-color: var(--accent-sage-soft); border-color: rgba(45, 90, 76, 0.25); color: var(--accent-sage);"
+              >
+                <span>+ নতুন শব্দ যোগ (Add Words)</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Section Navigation Tabs -->
+          <div class="flex flex-wrap items-center gap-2">
+            ${tabItems
+              .map(
+                (t) => `
+                  <button
+                    type="button"
+                    onclick="setFilterTab('${t.id}')"
+                    class="vw-section-tab ${activeTab === t.id ? 'active' : ''} font-bengali px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold"
+                  >
+                    ${t.label}
+                  </button>
+                `
+              )
+              .join('')}
+          </div>
+
+          <!-- 1. CORE VOCABULARY CARDS -->
+          ${
+            showVocab
+              ? `
+                <section aria-label="${lvl.title} Core Vocabulary" class="space-y-5">
+                  <div class="flex items-center justify-between">
+                    <h2 class="font-editorial text-xl sm:text-2xl font-bold" style="color: var(--ink-primary);">
+                      Core Vocabulary Cards
+                    </h2>
+                    <span class="font-bengali text-xs" style="color: var(--ink-muted);">
+                      ৬টি মূল শব্দ, অর্থ, উচ্চারণ ও ১০টি সমার্থক/বিপরীতার্থক
+                    </span>
+                  </div>
+                  ${lvl.words.map((item) => buildVocabularyCardHTML(item)).join('')}
+                </section>
+              `
+              : ''
+          }
+
+          <!-- 2. LEVEL-SPECIFIC CURRICULUM MODULES -->
+          ${
+            showCurriculum
+              ? `
+                <section aria-label="${lvl.title} Curriculum Modules" class="space-y-6">
+                  ${buildCurriculumModulesHTML(lvl)}
+                </section>
+              `
+              : ''
+          }
+
+          <!-- 3. STORIES & READING PASSAGES -->
+          ${
+            showStories
+              ? `
+                <section aria-label="${lvl.title} Stories & Reading" class="space-y-6">
+                  ${buildStoriesHTML(lvl)}
+                </section>
+              `
+              : ''
+          }
+
+          <!-- Practice CTA Banner -->
+          <div class="rounded-3xl p-6 sm:p-8 border text-center space-y-4" style="background-color: var(--surface-white); border-color: var(--border-subtle);">
+            <span class="badge-${lvl.id} text-[11px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full inline-block">
+              TEST YOUR RETENTION &bull; স্মৃতি পরীক্ষা ও অনুশীলন
+            </span>
+            <h3 class="font-editorial text-2xl sm:text-3xl font-bold" style="color: var(--ink-primary);">
+              Ready to Practice These Words?
+            </h3>
+            <p class="font-bengali text-xs sm:text-sm max-w-xl mx-auto" style="color: var(--ink-secondary);">
+              ৩ডি ফ্ল্যাশকার্ড দিয়ে রিভিশন দিন অথবা ওয়ার্ড ম্যাচিং, মিসিং লেটারস, কুইজ এবং স্ক্র্যাম্বল গেম খেলে স্কোর বাড়ান!
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <a
+                href="flashcards.html"
+                class="vw-btn-primary font-bengali px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+              >
+                <span>3D Flashcards শুরু করুন</span>
+                <span>&rarr;</span>
+              </a>
+              <a
+                href="games.html"
+                class="font-bengali px-6 py-3 rounded-2xl border text-xs sm:text-sm font-bold inline-flex items-center gap-2 hover:border-[#2D5A4C]"
+                style="background-color: var(--surface-sand); border-color: var(--border-subtle); color: var(--ink-primary);"
+              >
+                <span>৪টি মেমোরি গেম খেলুন</span>
+                <span>&rarr;</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Compact Daily Study Tracker Strip -->
+          ${buildCompactTrackerHTML()}
+        </div>
+      `;
+
+      if (showVocab && typeof WordImageLoader !== 'undefined') {
+        WordImageLoader.mountAll(lvl.words);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAppHeader('learn');
+      renderAppFooter();
+      renderLearnPage();
+    });
+  </script>
+</body>
+</html>
